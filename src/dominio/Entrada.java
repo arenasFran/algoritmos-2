@@ -1,9 +1,5 @@
 package dominio;
 
-/**
- *
- * @author PCMYA
- */
 public class Entrada implements Comparable<Entrada> {
 
     private Evento evento;

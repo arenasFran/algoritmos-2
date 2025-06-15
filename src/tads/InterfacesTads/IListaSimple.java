@@ -1,4 +1,6 @@
-package tads;
+package tads.InterfacesTads;
+
+import tads.Nodo;
 
 public interface IListaSimple<T> {
 

@@ -6,7 +6,8 @@ import dominio.Estado;
 import dominio.Evento;
 import dominio.Sala;
 import java.time.LocalDate;
-import tads.IListaSimple;
+import tads.InterfacesTads.IListaDoble;
+import tads.InterfacesTads.IListaSimple;
 import tads.ListaSimple;
 import tads.Nodo;
 
@@ -242,12 +243,82 @@ public class Sistema implements IObligatorio {
 
     @Override
     public Retorno eliminarEvento(String codigo) {
-        return Retorno.noImplementada();
+        // 1. Verificar si el evento existe
+        Evento eventoAEliminar = null;
+        for (int i = 0; i < listaEventos.tamaño(); i++) {
+            Evento evento = listaEventos.obtenerPorIndice(i);
+            if (evento.getCodigo().equals(codigo)) {
+                eventoAEliminar = evento;
+                break;
+            }
+        }
+
+        if (eventoAEliminar == null) {
+            return Retorno.error1(); // ERROR 1: Evento no existe
+        }
+
+        // 2. Verificar si hay entradas vendidas
+        if (eventoAEliminar.getEntradasVendidas().cantElementos() > 0) {
+            return Retorno.error2(); // ERROR 2: Evento tiene entradas vendidas
+        }
+
+        // 3. Liberar la sala asignada (eliminar la fecha ocupada)
+        Sala salaAsignada = eventoAEliminar.getSalaAsignada();
+        if (salaAsignada != null) {
+            salaAsignada.getFechasOcupadas().eliminar(eventoAEliminar.getFecha());
+        }
+
+        // 4. Eliminar el evento de la lista
+        listaEventos.eliminar(eventoAEliminar);
+
+        return Retorno.ok(); // OK: Evento eliminado
     }
 
     @Override
     public Retorno devolverEntrada(String cedula, String codigoEvento) {
-        return Retorno.noImplementada();
+        // 1. Verificar si el cliente existe
+        Cliente clienteBuscado = new Cliente("", cedula);
+        if (!listaClientes.contiene(clienteBuscado)) {
+            return Retorno.error1(); // ERROR 1: Cliente no existe
+        }
+
+        // 2. Verificar si el evento existe
+        Evento eventoEncontrado = null;
+        for (int i = 0; i < listaEventos.tamaño(); i++) {
+            Evento evento = listaEventos.obtenerPorIndice(i);
+            if (evento.getCodigo().equals(codigoEvento)) {
+                eventoEncontrado = evento;
+                break;
+            }
+        }
+        if (eventoEncontrado == null) {
+            return Retorno.error2(); // ERROR 2: Evento no existe
+        }
+
+        // 3. Buscar y eliminar la entrada del cliente para el evento
+        boolean entradaEliminada = false;
+        IListaDoble<Entrada> entradas = eventoEncontrado.getEntradasVendidas();
+        for (int i = 0; i < entradas.cantElementos(); i++) {
+            Entrada entrada = entradas.obtenerPorIndice(i);
+            if (entrada.getCliente().getCedula().equals(cedula) && entrada.getEstado() == Estado.ACTIVA) {
+                entradas.borrarElemento(entrada);
+                entradaEliminada = true;
+                break;
+            }
+        }
+
+        if (!entradaEliminada) {
+            return Retorno.error1(); // Cliente no tiene entrada activa para el evento
+        }
+
+        // 4. Reasignar entrada si hay clientes en espera (cola FIFO)
+        if (!eventoEncontrado.getListaEspera().esVacia()) {
+            Cliente primerEnEspera = eventoEncontrado.getListaEspera().desencolar();
+            Entrada nuevaEntrada = new Entrada(eventoEncontrado, primerEnEspera, Estado.ACTIVA);
+            eventoEncontrado.getEntradasVendidas().agregarFinal(nuevaEntrada);
+        }
+
+        return Retorno.ok(); // OK: Entrada devuelta (y reasignada si aplica)
     }
 
     @Override
@@ -395,7 +466,6 @@ public class Sistema implements IObligatorio {
     }
 
     @Override
-
     public Retorno esSalaOptima(String vistaSala[][]) {
         if (!esVistaValida(vistaSala)) {
             return Retorno.error1();

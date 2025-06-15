@@ -3,10 +3,7 @@ package dominio;
 import java.time.LocalDate;
 import tads.ListaSimple;
 
-/**
- *
- * @author frana
- */
+
 public class Sala {
 
     private String Nombre;

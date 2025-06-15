@@ -1,21 +1,15 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package tads;
 
-/**
- *
- * @author Rafael
- */
-public class Listadoble<T extends Comparable<T>> implements IListadoble<T> {
+import tads.InterfacesTads.IListaDoble;
+
+public class ListaDoble<T extends Comparable<T>> implements IListaDoble<T> {
 
     Nodo<T> primero;
     Nodo<T> ultimo;
     int cantidadnodos;
     int cantidadmaximaaceptada;
 
-    public Listadoble(int cantidadmaximaaceptada) {
+    public ListaDoble(int cantidadmaximaaceptada) {
         this.primero = null;
         this.ultimo = null;
         this.cantidadnodos = 0;
@@ -129,16 +123,16 @@ public class Listadoble<T extends Comparable<T>> implements IListadoble<T> {
 
     @Override
     public void borrarInicio() {
-        if (!this.esVacia()){
-            if (this.cantidadnodos==1){
+        if (!this.esVacia()) {
+            if (this.cantidadnodos == 1) {
                 this.setPrimero(null);
                 this.setUltimo(null);
-            }else{
+            } else {
                 this.setPrimero(this.primero.getSiguiente());
-                this.primero.setAnterior(null);                
+                this.primero.setAnterior(null);
             }
             this.cantidadnodos--;
-        }else{
+        } else {
             System.out.println("Lista vacia, no hay elementos a borrar");
         }
     }
@@ -160,34 +154,109 @@ public class Listadoble<T extends Comparable<T>> implements IListadoble<T> {
     }
 
     @Override
+    public T obtenerPorIndice(int indice) {
+
+        if (indice < 0 || indice >= cantidadnodos) {
+            throw new IndexOutOfBoundsException("Índice fuera de rango: " + indice);
+        }
+
+        Nodo<T> actual;
+        // Optimización: decidir si recorrer desde el inicio o el final
+        if (indice <= cantidadnodos / 2) {
+
+            actual = primero;
+            for (int i = 0; i < indice; i++) {
+                actual = actual.getSiguiente();
+            }
+        } else {
+
+            actual = ultimo;
+            for (int i = cantidadnodos - 1; i > indice; i--) {
+                actual = actual.getAnterior();
+            }
+        }
+        return actual.getDato();
+    }
+
+    @Override
     public void borrarElemento(T dato) {
+        if (this.esVacia()) {
+            System.out.println("Lista vacía, no se puede borrar.");
+            return;
+        }
 
-
+        Nodo<T> actual = this.primero;
+        while (actual != null) {
+            if (actual.getDato().equals(dato)) {
+                // Caso 1: Es el primer nodo
+                if (actual == this.primero) {
+                    this.borrarInicio();
+                } // Caso 2: Es el último nodo
+                else if (actual == this.ultimo) {
+                    this.borrarFin();
+                } // Caso 3: Nodo intermedio
+                else {
+                    actual.getAnterior().setSiguiente(actual.getSiguiente());
+                    actual.getSiguiente().setAnterior(actual.getAnterior());
+                    this.cantidadnodos--;
+                }
+                return; // Elemento borrado, salir del método
+            }
+            actual = actual.getSiguiente();
+        }
+        System.out.println("Elemento no encontrado: " + dato);
     }
 
     @Override
     public boolean buscarelemento(T dato) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        Nodo<T> actual = this.primero;
+        while (actual != null) {
+            if (actual.getDato().equals(dato)) {
+                return true;
+            }
+            actual = actual.getSiguiente();
+        }
+        return false;
     }
 
     @Override
     public Nodo<T> obtenerElemento(T dato) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Nodo<T> actual = this.primero;
+        while (actual != null) {
+            if (actual.getDato().equals(dato)) {
+                return actual;
+            }
+            actual = actual.getSiguiente();
+        }
+        return null; // Si no se encuentra el elemento
     }
 
     @Override
     public void vaciar() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        this.primero = null;
+        this.ultimo = null;
+        this.cantidadnodos = 0;
     }
 
     @Override
     public void mostrar() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        if (this.esVacia()) {
+            System.out.println("Lista vacía.");
+            return;
+        }
+
+        Nodo<T> actual = this.primero;
+        System.out.print("Lista: [ ");
+        while (actual != null) {
+            System.out.print(actual.getDato() + " ");
+            actual = actual.getSiguiente();
+        }
+        System.out.println("]");
     }
 
     @Override
     public int cantElementos() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        return this.cantidadnodos;
     }
 
 }

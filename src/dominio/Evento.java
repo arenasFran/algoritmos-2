@@ -1,13 +1,9 @@
 package dominio;
 
 import java.time.LocalDate;
-import tads.Listadoble;
+import tads.ListaDoble;
 import tads.Cola;
 
-/**
- *
- * @author frana
- */
 public class Evento {
 
     private String codigo;
@@ -15,7 +11,7 @@ public class Evento {
     private int aforoNecesario;
     private LocalDate fecha;
     private Sala salaAsignada;
-    private Listadoble<Entrada> entradasVendidas;
+    private ListaDoble<Entrada> entradasVendidas;
     private Cola<Cliente> listaEspera;
 
     public Evento(String codigo, String descripcion, int aforoNecesario, LocalDate fecha, Sala salaAsignada) {
@@ -24,11 +20,11 @@ public class Evento {
         this.aforoNecesario = aforoNecesario;
         this.fecha = fecha;
         this.salaAsignada = salaAsignada;
-        this.entradasVendidas = new Listadoble<Entrada>(10);
+        this.entradasVendidas = new ListaDoble<Entrada>(10);
         this.listaEspera = new Cola<Cliente>();
     }
 
-    public void setEntradasVendidas(Listadoble<Entrada> entradasVendidas) {
+    public void setEntradasVendidas(ListaDoble<Entrada> entradasVendidas) {
         this.entradasVendidas = entradasVendidas;
     }
 
@@ -72,7 +68,7 @@ public class Evento {
         this.salaAsignada = salaAsignada;
     }
 
-    public Listadoble<Entrada> getEntradasVendidas() {
+    public ListaDoble<Entrada> getEntradasVendidas() {
         return entradasVendidas;
     }
 

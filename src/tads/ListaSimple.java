@@ -1,5 +1,7 @@
 package tads;
 
+import tads.InterfacesTads.IListaSimple;
+
 public class ListaSimple<T> implements IListaSimple<T> {
 
     private Nodo<T> inicio;
