@@ -11,6 +11,7 @@ import tads.InterfacesTads.IListaSimple;
 import tads.ListaSimple;
 import tads.ListaDoble;
 import tads.Nodo;
+import tads.Cola;
 
 public class Sistema implements IObligatorio {
 
@@ -563,13 +564,78 @@ public class Sistema implements IObligatorio {
     }
 
     @Override
-    public Retorno listarClientesDeEvento(String código, int n) {
-        return Retorno.noImplementada();
+    public Retorno listarClientesDeEvento(String codigo, int n) {
+        if (n < 1) return Retorno.error2();
+
+        Evento evento = buscarEvento(codigo);
+        if (evento == null) return Retorno.error1();
+
+        ListaDoble<Entrada> entradas = evento.getEntradasVendidas();
+        if (entradas.cantElementos() == 0) {
+            return new Retorno(Retorno.Resultado.OK, "");
+        }
+
+        StringBuilder resultado = new StringBuilder();
+        int desde = Math.max(0, entradas.cantElementos() - n);
+
+        for (int i = desde; i < entradas.cantElementos(); i++) {
+            Entrada entrada = entradas.obtenerPorIndice(i);
+            if (resultado.length() > 0) resultado.append("#");
+            resultado.append(entrada.getCliente().getCedula()).append("-")
+                   .append(entrada.getCliente().getName());
+        }
+
+        return new Retorno(Retorno.Resultado.OK, resultado.toString());
     }
 
     @Override
     public Retorno listarEsperaEvento() {
-        return Retorno.noImplementada();
+        if (listaEventos.tamaño() == 0) {
+            return new Retorno(Retorno.Resultado.OK, "");
+        }
+
+        ListaSimple<Evento> eventosConEspera = new ListaSimple<>();
+        for (int i = 0; i < listaEventos.tamaño(); i++) {
+            Evento evento = listaEventos.obtenerPorIndice(i);
+            if (!evento.getListaEspera().esVacia()) {
+                eventosConEspera.agregar(evento);
+            }
+        }
+
+        // Ordenar eventos por código usando bubble sort
+        eventosConEspera.bubbleSort((e1, e2) -> e1.getCodigo().compareTo(e2.getCodigo()));
+
+        StringBuilder resultado = new StringBuilder();
+
+        for (int i = 0; i < eventosConEspera.tamaño(); i++) {
+            Evento evento = eventosConEspera.obtenerPorIndice(i);
+            Cola<Cliente> colaOriginal = evento.getListaEspera();
+            Cola<Cliente> colaCopia = new Cola<>();
+
+            ListaSimple<Cliente> listaEspera = new ListaSimple<>();
+
+            while (!colaOriginal.esVacia()) {
+                Cliente c = colaOriginal.desencolar();
+                listaEspera.agregar(c);
+                colaCopia.encolar(c);
+            }
+
+            while (!colaCopia.esVacia()) {
+                colaOriginal.encolar(colaCopia.desencolar());
+            }
+
+            // Ordenar clientes por cédula usando bubble sort
+            listaEspera.bubbleSort((c1, c2) -> c1.getCedula().compareTo(c2.getCedula()));
+
+            // Agregar al resultado
+            for (int j = 0; j < listaEspera.tamaño(); j++) {
+                if (resultado.length() > 0) resultado.append("#");
+                resultado.append(evento.getCodigo()).append("-")
+                       .append(listaEspera.obtenerPorIndice(j).getCedula());
+            }
+        }
+
+        return new Retorno(Retorno.Resultado.OK, resultado.toString());
     }
 
     @Override
@@ -653,6 +719,16 @@ public class Sistema implements IObligatorio {
     @Override
     public Retorno comprasXDia(int mes) {
         return Retorno.noImplementada();
+    }
+
+    private Evento buscarEvento(String codigo) {
+        for (int i = 0; i < listaEventos.tamaño(); i++) {
+            Evento evento = listaEventos.obtenerPorIndice(i);
+            if (evento.getCodigo().equals(codigo)) {
+                return evento;
+            }
+        }
+        return null;
     }
 
 }

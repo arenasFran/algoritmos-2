@@ -22,4 +22,6 @@ public interface IListaSimple<T> {
 
     public void insertarEn(int indice, T dato);
 
+    public void bubbleSort(java.util.Comparator<T> comparator);
+
 }

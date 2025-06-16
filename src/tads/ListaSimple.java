@@ -154,4 +154,28 @@ public class ListaSimple<T> implements IListaSimple<T> {
         tamaño++;
     }
 
+    @Override
+    public void bubbleSort(java.util.Comparator<T> comparator) {
+        if (tamaño <= 1) return;
+
+        boolean swapped;
+        do {
+            swapped = false;
+            Nodo<T> actual = inicio;
+            Nodo<T> siguiente = inicio.getSiguiente();
+
+            while (siguiente != null) {
+                if (comparator.compare(actual.getDato(), siguiente.getDato()) > 0) {
+                    // Swap data
+                    T temp = actual.getDato();
+                    actual.setDato(siguiente.getDato());
+                    siguiente.setDato(temp);
+                    swapped = true;
+                }
+                actual = siguiente;
+                siguiente = siguiente.getSiguiente();
+            }
+        } while (swapped);
+    }
+
 }
