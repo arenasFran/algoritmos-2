@@ -580,9 +580,10 @@ public class Sistema implements IObligatorio {
 
         for (int i = desde; i < entradas.cantElementos(); i++) {
             Entrada entrada = entradas.obtenerPorIndice(i);
+            Cliente cliente = entrada.getCliente();
             if (resultado.length() > 0) resultado.append("#");
-            resultado.append(entrada.getCliente().getCedula()).append("-")
-                   .append(entrada.getCliente().getName());
+            resultado.append(cliente.getCedula()).append("-")
+                   .append(cliente.getName());
         }
 
         return new Retorno(Retorno.Resultado.OK, resultado.toString());
