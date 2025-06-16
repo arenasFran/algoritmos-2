@@ -208,8 +208,8 @@ public class Sistema implements IObligatorio {
     @Override
     public Retorno comprarEntrada(String cedula, String codigoEvento) {
         // Buscar el cliente
-        Cliente clienteBuscado = new Cliente("", cedula);
-        if (!listaClientes.contiene(clienteBuscado)) {
+        Cliente clienteBuscado = buscarClientePorCedula(cedula);
+        if (clienteBuscado == null) {
             return Retorno.error1();
         }
 
@@ -241,6 +241,16 @@ public class Sistema implements IObligatorio {
             eventoEncontrado.getListaEspera().encolar(clienteBuscado);
             return Retorno.ok("Cliente agregado a lista de espera");
         }
+    }
+
+    private Cliente buscarClientePorCedula(String cedula) {
+        for (int i = 0; i < listaClientes.tamaño(); i++) {
+            Cliente c = listaClientes.obtenerPorIndice(i);
+            if (c.getCedula().equals(cedula)) {
+                return c;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -279,8 +289,8 @@ public class Sistema implements IObligatorio {
     @Override
     public Retorno devolverEntrada(String cedula, String codigoEvento) {
         // 1. Verificar si el cliente existe
-        Cliente clienteBuscado = new Cliente("", cedula);
-        if (!listaClientes.contiene(clienteBuscado)) {
+        Cliente clienteBuscado = buscarClientePorCedula(cedula);
+        if (clienteBuscado == null) {
             return Retorno.error1(); // ERROR 1: Cliente no existe
         }
 
@@ -325,8 +335,8 @@ public class Sistema implements IObligatorio {
 
     public Retorno calificarEvento(String cedula, String codigoEvento, int puntaje, String comentario) {
         // 1. Verificar si el cliente existe
-        Cliente clienteBuscado = new Cliente("", cedula);
-        if (!listaClientes.contiene(clienteBuscado)) {
+        Cliente clienteBuscado = buscarClientePorCedula(cedula);
+        if (clienteBuscado == null) {
             return Retorno.error1(); // ERROR 1: Cliente no existe
         }
 
