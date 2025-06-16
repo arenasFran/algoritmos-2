@@ -5,11 +5,15 @@ public class Entrada implements Comparable<Entrada> {
     private Evento evento;
     private Cliente cliente;
     private Estado estado;
+    private Integer calificacion;
+    private String comentario;
 
     public Entrada(Evento evento, Cliente cliente, Estado estado) {
         this.evento = evento;
         this.cliente = cliente;
         this.estado = estado;
+        this.calificacion = null;
+        this.comentario = null;
     }
 
     @Override
@@ -41,4 +45,19 @@ public class Entrada implements Comparable<Entrada> {
         this.estado = estado;
     }
 
+    public Integer getCalificacion() {
+        return calificacion;
+    }
+
+    public void setCalificacion(Integer calificacion) {
+        this.calificacion = calificacion;
+    }
+
+    public String getComentario() {
+        return comentario;
+    }
+
+    public void setComentario(String comentario) {
+        this.comentario = comentario;
+    }
 }

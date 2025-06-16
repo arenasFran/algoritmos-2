@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import tads.InterfacesTads.IListaDoble;
 import tads.InterfacesTads.IListaSimple;
 import tads.ListaSimple;
+import tads.ListaDoble;
 import tads.Nodo;
 
 public class Sistema implements IObligatorio {
@@ -321,11 +322,52 @@ public class Sistema implements IObligatorio {
         return Retorno.ok(); // OK: Entrada devuelta (y reasignada si aplica)
     }
 
-    @Override
     public Retorno calificarEvento(String cedula, String codigoEvento, int puntaje, String comentario) {
-        return Retorno.noImplementada();
-    }
+        // 1. Verificar si el cliente existe
+        Cliente clienteBuscado = new Cliente("", cedula);
+        if (!listaClientes.contiene(clienteBuscado)) {
+            return Retorno.error1(); // ERROR 1: Cliente no existe
+        }
 
+        // 2. Verificar si el evento existe
+        Evento eventoEncontrado = null;
+        for (int i = 0; i < listaEventos.tamaño(); i++) {
+            Evento evento = listaEventos.obtenerPorIndice(i);
+            if (evento.getCodigo().equals(codigoEvento)) {
+                eventoEncontrado = evento;
+                break;
+            }
+        }
+        if (eventoEncontrado == null) {
+            return Retorno.error2(); // ERROR 2: Evento no existe
+        }
+
+        // 3. Verificar si el puntaje es válido
+        if (puntaje < 1 || puntaje > 10) {
+            return Retorno.error3(); // ERROR 3: Puntaje inválido
+        }
+
+        // 4. Verificar si el cliente ya calificó el evento
+        IListaDoble<Entrada> entradas = eventoEncontrado.getEntradasVendidas();
+        for (int i = 0; i < entradas.cantElementos(); i++) {
+            Entrada entrada = entradas.obtenerPorIndice(i);
+            if (entrada.getCliente().getCedula().equals(cedula) && entrada.getCalificacion() != null) {
+                return Retorno.error4(); // ERROR 4: Evento ya calificado por el cliente
+            }
+        }
+
+        // 5. Registrar la calificación
+        for (int i = 0; i < entradas.cantElementos(); i++) {
+            Entrada entrada = entradas.obtenerPorIndice(i);
+            if (entrada.getCliente().getCedula().equals(cedula)) {
+                entrada.setCalificacion(puntaje);
+                entrada.setComentario(comentario);
+                break;
+            }
+        }
+
+        return Retorno.ok(); // OK: Calificación registrada
+    }
     @Override
     public Retorno listarSalas() {
         if (listaSalas.tamaño() == 0) {
@@ -537,7 +579,70 @@ public class Sistema implements IObligatorio {
 
     @Override
     public Retorno eventoMejorPuntuado() {
-        return Retorno.noImplementada();
+        if (listaEventos.tamaño() == 0) {
+            return new Retorno(Retorno.Resultado.OK, ""); // No hay eventos
+        }
+
+        double mejorPromedio = -1;
+        ListaSimple<Evento> eventosMejorPuntaje = new ListaSimple<>();
+
+        for (int i = 0; i < listaEventos.tamaño(); i++) {
+            Evento evento = listaEventos.obtenerPorIndice(i);
+            int suma = 0;
+            int cantidad = 0;
+
+            for (int j = 0; j < evento.getEntradasVendidas().cantElementos(); j++) {
+                Entrada entrada = evento.getEntradasVendidas().obtenerPorIndice(j);
+                if (entrada.getCalificacion() != null) {
+                    suma += entrada.getCalificacion();
+                    cantidad++;
+                }
+            }
+
+            if (cantidad > 0) {
+                double promedio = (double) suma / cantidad;
+
+                if (promedio > mejorPromedio) {
+                    mejorPromedio = promedio;
+                    eventosMejorPuntaje = new ListaSimple<>(); // limpiar anteriores
+                    eventosMejorPuntaje.agregar(evento);
+                } else if (promedio == mejorPromedio) {
+                    eventosMejorPuntaje.agregar(evento);
+                }
+            }
+        }
+
+        if (eventosMejorPuntaje.tamaño() == 0) {
+            return new Retorno(Retorno.Resultado.OK, ""); // No hay calificaciones
+        }
+
+        // Ordenar por código de evento
+        ListaSimple<Evento> eventosOrdenados = new ListaSimple<>();
+        while (eventosMejorPuntaje.tamaño() > 0) {
+            Evento menor = eventosMejorPuntaje.obtenerPorIndice(0);
+            int posMenor = 0;
+            
+            for (int i = 1; i < eventosMejorPuntaje.tamaño(); i++) {
+                Evento actual = eventosMejorPuntaje.obtenerPorIndice(i);
+                if (actual.getCodigo().compareTo(menor.getCodigo()) < 0) {
+                    menor = actual;
+                    posMenor = i;
+                }
+            }
+            
+            eventosOrdenados.agregar(menor);
+            eventosMejorPuntaje.eliminar(menor);
+        }
+
+        // Armar string resultado
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < eventosOrdenados.tamaño(); i++) {
+            Evento e = eventosOrdenados.obtenerPorIndice(i);
+            if (i > 0) sb.append("#");
+            sb.append(e.getCodigo()).append("-").append((int) mejorPromedio); // promedio como entero
+        }
+
+        return new Retorno(Retorno.Resultado.OK, sb.toString());
     }
 
     @Override
