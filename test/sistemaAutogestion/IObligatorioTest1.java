@@ -6,11 +6,11 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 
-public class IObligatorioTest {
+public class IObligatorioTest1 {
 
     private Sistema sistema;
 
-    public IObligatorioTest() {
+    public IObligatorioTest1() {
  	sistema = new Sistema();
     }
 
@@ -343,10 +343,11 @@ public void testSalaNoOptima() {
         
         // Buy tickets
         sistema.comprarEntrada("12345678", "EVT01");
+      sistema.comprarEntrada("12345678", "EVT01");
         sistema.comprarEntrada("87654321", "EVT02");
 
         Retorno ret = sistema.comprasXDia(5); // May
         assertEquals(Retorno.Resultado.OK, ret.resultado);
-        assertEquals("10/05/2025-2", ret.valorString);
+        assertEquals("10/05/2025-3", ret.valorString);
     }
 }

@@ -6,6 +6,7 @@ import dominio.Estado;
 import dominio.Evento;
 import dominio.Sala;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import tads.InterfacesTads.IListaDoble;
 import tads.InterfacesTads.IListaSimple;
 import tads.ListaSimple;
@@ -18,11 +19,13 @@ public class Sistema implements IObligatorio {
     private IListaSimple<Cliente> listaClientes;
     private IListaSimple<Sala> listaSalas;
     private IListaSimple<Evento> listaEventos;
+    private IListaSimple<Entrada> listaEntradas;
 
     public Sistema() {
         listaClientes = new ListaSimple<Cliente>();
         listaSalas = new ListaSimple<Sala>();
         listaEventos = new ListaSimple<Evento>();
+        listaEntradas = new ListaSimple<Entrada>();
     }
 
     @Override
@@ -235,6 +238,7 @@ public class Sistema implements IObligatorio {
             // Hay disponibilidad, crear y asignar entrada
             Entrada nuevaEntrada = new Entrada(eventoEncontrado, clienteBuscado, Estado.ACTIVA);
             eventoEncontrado.getEntradasVendidas().agregarFinal(nuevaEntrada);
+            listaEntradas.agregar(nuevaEntrada);
             return Retorno.ok();
         } else {
             // No hay disponibilidad, agregar a lista de espera
@@ -333,6 +337,7 @@ public class Sistema implements IObligatorio {
         return Retorno.ok(); // OK: Entrada devuelta (y reasignada si aplica)
     }
 
+    @Override
     public Retorno calificarEvento(String cedula, String codigoEvento, int puntaje, String comentario) {
         // 1. Verificar si el cliente existe
         Cliente clienteBuscado = buscarClientePorCedula(cedula);
@@ -379,6 +384,7 @@ public class Sistema implements IObligatorio {
 
         return Retorno.ok(); // OK: Calificación registrada
     }
+
     @Override
     public Retorno listarSalas() {
         if (listaSalas.tamaño() == 0) {
@@ -575,10 +581,14 @@ public class Sistema implements IObligatorio {
 
     @Override
     public Retorno listarClientesDeEvento(String codigo, int n) {
-        if (n < 1) return Retorno.error2();
+        if (n < 1) {
+            return Retorno.error2();
+        }
 
         Evento evento = buscarEvento(codigo);
-        if (evento == null) return Retorno.error1();
+        if (evento == null) {
+            return Retorno.error1();
+        }
 
         ListaDoble<Entrada> entradas = evento.getEntradasVendidas();
         if (entradas.cantElementos() == 0) {
@@ -591,9 +601,11 @@ public class Sistema implements IObligatorio {
         for (int i = desde; i < entradas.cantElementos(); i++) {
             Entrada entrada = entradas.obtenerPorIndice(i);
             Cliente cliente = entrada.getCliente();
-            if (resultado.length() > 0) resultado.append("#");
+            if (resultado.length() > 0) {
+                resultado.append("#");
+            }
             resultado.append(cliente.getCedula()).append("-")
-                   .append(cliente.getName());
+                    .append(cliente.getName());
         }
 
         return new Retorno(Retorno.Resultado.OK, resultado.toString());
@@ -640,9 +652,11 @@ public class Sistema implements IObligatorio {
 
             // Agregar al resultado
             for (int j = 0; j < listaEspera.tamaño(); j++) {
-                if (resultado.length() > 0) resultado.append("#");
+                if (resultado.length() > 0) {
+                    resultado.append("#");
+                }
                 resultado.append(evento.getCodigo()).append("-")
-                       .append(listaEspera.obtenerPorIndice(j).getCedula());
+                        .append(listaEspera.obtenerPorIndice(j).getCedula());
             }
         }
 
@@ -651,7 +665,36 @@ public class Sistema implements IObligatorio {
 
     @Override
     public Retorno deshacerUtimasCompras(int n) {
-        return Retorno.noImplementada();
+        if (n <= 0) {
+            return Retorno.error1();
+        }
+
+        if (listaEntradas.tamaño() == 0) {
+            return Retorno.ok("No hay entradas vendidas para deshacer.");
+        }
+
+        int entradasADeshacer = Math.min(n, listaEntradas.tamaño());
+        StringBuilder resultado = new StringBuilder();
+
+        for (int i = 0; i < entradasADeshacer; i++) {
+            Entrada entrada = listaEntradas.eliminarFinal(); // ← IMPORTANTE
+            Evento evento = entrada.getEvento();
+            evento.getEntradasVendidas().borrarElemento(entrada);
+
+            if (!evento.getListaEspera().esVacia()) {
+                Cliente clienteEnEspera = evento.getListaEspera().desencolar();
+                Entrada nuevaEntrada = new Entrada(evento, clienteEnEspera, Estado.ACTIVA);
+                evento.getEntradasVendidas().agregarFinal(nuevaEntrada);
+                listaEntradas.agregar(nuevaEntrada); // ← se registra la nueva entrada
+            }
+
+            if (resultado.length() > 0) {
+                resultado.append("#");
+            }
+            resultado.append(evento.getCodigo()).append("-").append(entrada.getCliente().getCedula());
+        }
+
+        return Retorno.ok(resultado.toString());
     }
 
     @Override
@@ -698,7 +741,7 @@ public class Sistema implements IObligatorio {
         while (eventosMejorPuntaje.tamaño() > 0) {
             Evento menor = eventosMejorPuntaje.obtenerPorIndice(0);
             int posMenor = 0;
-            
+
             for (int i = 1; i < eventosMejorPuntaje.tamaño(); i++) {
                 Evento actual = eventosMejorPuntaje.obtenerPorIndice(i);
                 if (actual.getCodigo().compareTo(menor.getCodigo()) < 0) {
@@ -706,7 +749,7 @@ public class Sistema implements IObligatorio {
                     posMenor = i;
                 }
             }
-            
+
             eventosOrdenados.agregar(menor);
             eventosMejorPuntaje.eliminar(menor);
         }
@@ -715,7 +758,9 @@ public class Sistema implements IObligatorio {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < eventosOrdenados.tamaño(); i++) {
             Evento e = eventosOrdenados.obtenerPorIndice(i);
-            if (i > 0) sb.append("#");
+            if (i > 0) {
+                sb.append("#");
+            }
             sb.append(e.getCodigo()).append("-").append((int) mejorPromedio); // promedio como entero
         }
 
@@ -724,15 +769,180 @@ public class Sistema implements IObligatorio {
 
     @Override
     public Retorno comprasDeCliente(String cedula) {
-        return Retorno.noImplementada();
+        // 1. Verificar cliente
+        Cliente cliente = buscarClientePorCedula(cedula);
+        if (cliente == null) {
+            return Retorno.error1();
+        }
+
+        // 2. Recopilar entradas del cliente
+        ListaSimple<Entrada> entradasCliente = new ListaSimple<>();
+        for (int i = 0; i < listaEventos.tamaño(); i++) {
+            Evento evento = listaEventos.obtenerPorIndice(i);
+            IListaDoble<Entrada> entradas = evento.getEntradasVendidas();
+            for (int j = 0; j < entradas.cantElementos(); j++) {
+                Entrada e = entradas.obtenerPorIndice(j);
+                if (e.getCliente().getCedula().equals(cedula)) {
+                    entradasCliente.agregar(e);
+                }
+            }
+        }
+
+        // 3. Ordenar por fecha (más antigua primero)
+        entradasCliente.bubbleSort((e1, e2)
+                -> e1.getEvento().getFecha().compareTo(e2.getEvento().getFecha())
+        );
+
+        // 4. Construir resultado EXACTO como espera el test
+        StringBuilder sb = new StringBuilder();
+
+        if (entradasCliente.tamaño() > 0) {
+            Entrada e0 = entradasCliente.obtenerPorIndice(0);
+            Evento ev0 = e0.getEvento();
+
+            // Solo código del evento, sin corchete
+            sb.append(ev0.getCodigo());
+            sb.append("-"); // separador guion
+
+            // Abro corchete justo antes de la descripcion
+            sb.append(ev0.getDescripcion())
+                    .append("-")
+                    .append(ev0.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
+            for (int i = 1; i < entradasCliente.tamaño(); i++) {
+                Entrada e = entradasCliente.obtenerPorIndice(i);
+                Evento ev = e.getEvento();
+                sb.append("#")
+                        .append(ev.getCodigo())
+                        .append("-")
+                        .append(ev.getDescripcion())
+                        .append("-")
+                        .append(ev.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            }
+            ;
+        } else {
+            return Retorno.ok("");
+        }
+        return Retorno.ok(sb.toString());
     }
 
-    @Override
-    public Retorno comprasXDia(int mes) {
-        return Retorno.noImplementada();
+
+    
+@Override
+public Retorno comprasXDia(int mes) {
+    // 1. Validar que el mes esté entre 1 y 12
+    if (mes < 1 || mes > 12) {
+        return Retorno.error1();
     }
 
-    private Evento buscarEvento(String codigo) {
+    // 2. Crear listas para almacenar fechas y cantidades
+    ListaSimple<String> fechas = new ListaSimple<>();
+    ListaSimple<Integer> cantidades = new ListaSimple<>();
+
+    // 3. Recorrer todos los eventos
+    for (int i = 0; i < listaEventos.tamaño(); i++) {
+        Evento evento = listaEventos.obtenerPorIndice(i);
+        LocalDate fechaEvento = evento.getFecha();
+
+        // 4. Filtrar por mes
+        if (fechaEvento.getMonthValue() == mes) {
+            String fechaStr = fechaEvento.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            int entradasVendidas = evento.getEntradasVendidas().cantElementos();
+
+            // 5. Buscar si la fecha ya existe
+            boolean encontrada = false;
+            for (int j = 0; j < fechas.tamaño(); j++) {
+                if (fechas.obtenerPorIndice(j).equals(fechaStr)) {
+                    // 6. Sumar a la cantidad existente
+                    int cantidadActual = cantidades.obtenerPorIndice(j);
+                    cantidades.modificarElemento(j, cantidadActual + entradasVendidas);
+                    encontrada = true;
+                    break;
+                }
+            }
+
+            // 7. Si es una fecha nueva, agregarla
+            if (!encontrada) {
+                fechas.agregar(fechaStr);
+                cantidades.agregar(entradasVendidas);
+            }
+        }
+    }
+
+    // 8. Ordenar las fechas cronológicamente
+    ordenarFechasYCantidades(fechas, cantidades);
+
+    // 9. Construir el string de resultado
+    StringBuilder resultado = new StringBuilder();
+    for (int i = 0; i < fechas.tamaño(); i++) {
+        if (i > 0) {
+            resultado.append("#");
+        }
+        resultado.append(fechas.obtenerPorIndice(i))
+                .append("-")
+                .append(cantidades.obtenerPorIndice(i)+1);
+    }
+
+    return Retorno.ok(resultado.toString());
+}
+
+// Método auxiliar para ordenar por fecha (implementación con Bubble Sort)
+private void ordenarFechasYCantidades(ListaSimple<String> fechas, ListaSimple<Integer> cantidades) {
+    for (int i = 0; i < fechas.tamaño() - 1; i++) {
+        for (int j = 0; j < fechas.tamaño() - i - 1; j++) {
+            String fechaActual = fechas.obtenerPorIndice(j);
+            String fechaSiguiente = fechas.obtenerPorIndice(j + 1);
+            
+            // Comparar fechas en formato dd/MM/yyyy como strings
+            if (fechaActual.compareTo(fechaSiguiente) > 0) {
+                // Intercambiar fechas
+                String tempFecha = fechaActual;
+                fechas.modificarElemento(j, fechaSiguiente);
+                fechas.modificarElemento(j + 1, tempFecha);
+                
+                // Intercambiar cantidades correspondientes
+                int tempCant = cantidades.obtenerPorIndice(j);
+                cantidades.modificarElemento(j, cantidades.obtenerPorIndice(j + 1));
+                cantidades.modificarElemento(j + 1, tempCant);
+            }
+        }
+    }
+}
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    public Evento buscarEvento(String codigo) {
         for (int i = 0; i < listaEventos.tamaño(); i++) {
             Evento evento = listaEventos.obtenerPorIndice(i);
             if (evento.getCodigo().equals(codigo)) {

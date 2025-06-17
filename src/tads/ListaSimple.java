@@ -32,6 +32,28 @@ public class ListaSimple<T> implements IListaSimple<T> {
     }
 
     @Override
+public T eliminarFinal() {
+    if (tamaño == 0) return null;
+    if (tamaño == 1) {
+        T dato = inicio.getDato();
+        inicio = fin = null;
+        tamaño = 0;
+        return dato;
+    }
+
+    Nodo<T> actual = inicio;
+    while (actual.getSiguiente() != fin) {
+        actual = actual.getSiguiente();
+    }
+
+    T dato = fin.getDato();
+    actual.setSiguiente(null);
+    fin = actual;
+    tamaño--;
+    return dato;
+}
+
+    @Override
     public void agregar(T dato) {
         Nodo<T> nuevoNodo = new Nodo<>(dato);
         if (inicio == null) {
@@ -178,4 +200,15 @@ public class ListaSimple<T> implements IListaSimple<T> {
         } while (swapped);
     }
 
+    public void modificarElemento(int indice, T elemento) {
+    if (indice < 0 || indice >= tamaño()) {
+        throw new IndexOutOfBoundsException("Índice fuera de rango");
+    }
+    
+    Nodo<T> actual = inicio;
+    for (int i = 0; i < indice; i++) {
+        actual = actual.getSiguiente();
+    }
+    actual.setDato(elemento);
+}
 }
