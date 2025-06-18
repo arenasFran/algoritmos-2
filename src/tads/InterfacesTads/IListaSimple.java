@@ -7,7 +7,8 @@ public interface IListaSimple<T> {
     public void agregar(T dato);
 
     public void agregarInicio(T dato);
-    public  T eliminarFinal();
+
+    public T eliminarFinal();
 
     public void agregarFin(T dato);
 

@@ -30,6 +30,13 @@ public class Sistema implements IObligatorio {
         pilaEntradas = new Pila<Entrada>();
     }
 
+    /*
+    Pre-condiciones: Ninguna.
+    Post-condiciones:
+    Se inicializan las listas listaClientes, listaSalas, listaEventos como nuevas ListaSimple vacías.
+    Se inicializa la pila pilaEntradas como una nueva Pila vacía.
+    Retorna Retorno.ok().
+     */
     @Override
     public Retorno crearSistemaDeGestion() {
         listaClientes = new ListaSimple<Cliente>();
@@ -38,6 +45,19 @@ public class Sistema implements IObligatorio {
         return Retorno.ok();
     }
 
+    /*
+    Pre-condiciones:
+    nombre no debe ser nulo ni una cadena vacía (después de recortar espacios en blanco).
+    capacidad debe ser mayor que 0.
+    No debe existir ya una sala con el mismo nombre (insensible a mayúsculas/minúsculas o espacios en blanco al inicio/final).
+    
+    Post-condiciones:
+    Si capacidad no es válida, retorna Retorno.ERROR_2.
+    Si nombre no es válido o ya existe una sala con ese nombre, retorna Retorno.ERROR_1.
+    Si las condiciones anteriores se cumplen, se crea una nueva Sala con el nombre y capacidad proporcionados.
+    La nueva sala se agrega al inicio de listaSalas.
+    Retorna Retorno.OK.
+     */
     @Override
     public Retorno registrarSala(String nombre, int capacidad) {
         if (!esCapacidadValida(capacidad)) {
@@ -75,6 +95,16 @@ public class Sistema implements IObligatorio {
         listaSalas.agregarInicio(nuevaSala);
     }
 
+    /*
+    Pre-condiciones:
+    nombre no debe ser nulo ni una cadena vacía (después de recortar espacios en blanco).
+    Debe existir una sala con el nombre proporcionado en listaSalas.
+    
+    Post-condiciones:
+    Si nombre no es válido o no existe una sala con ese nombre, retorna Retorno.ERROR_1.
+    Si la sala existe, se elimina de listaSalas.
+    Retorna Retorno.OK.
+     */
     @Override
     public Retorno eliminarSala(String nombre) {
         if (!esNombreValido(nombre)) {
@@ -95,6 +125,23 @@ public class Sistema implements IObligatorio {
         listaSalas.eliminar(salaAEliminar);
     }
 
+    /*
+    
+    Pre-condiciones:
+    aforoNecesario debe ser mayor que 0.
+    fecha debe ser una fecha válida (día entre 1 y 30, mes entre 1 y 12).
+    No debe existir un evento con el mismo codigo.
+    Debe haber una Sala disponible con capacidad suficiente (aforoNecesario) y que no esté ocupada en la fecha especificada.
+
+    Post-condiciones:
+    Si aforoNecesario no es válido, retorna Retorno.ERROR_2.
+    Si fecha no es válida o no se encuentra una sala disponible, retorna Retorno.ERROR_3.
+    Si ya existe un evento con el codigo, retorna Retorno.ERROR_1.
+    Si todas las condiciones se cumplen, se busca la sala disponible con la menor capacidad que cumpla los requisitos.
+    La fecha del evento se marca como ocupada en la sala asignada.
+    Se crea un nuevo Evento y se agrega al final de listaEventos.
+    Retorna Retorno.OK.
+     */
     @Override
     public Retorno registrarEvento(String codigo, String descripcion, int aforoNecesario, LocalDate fecha) {
         if (!esAforoValido(aforoNecesario)) {
@@ -170,6 +217,19 @@ public class Sistema implements IObligatorio {
         listaEventos.agregarFin(nuevoEvento);
     }
 
+    /*
+    Pre-condiciones:
+    cedula debe tener exactamente 8 caracteres y ser todos dígitos numéricos.
+    No debe existir ya un cliente con la misma cedula.
+    
+    Post-condiciones:
+    Si la cedula no es válida, retorna Retorno.ERROR_1.
+    Si ya existe un cliente con la misma cedula, retorna Retorno.ERROR_2.
+    Si las condiciones se cumplen, se crea un nuevo Cliente con el nombre y cedula proporcionados.
+    El nuevo cliente se agrega a listaClientes.
+    Retorna Retorno.OK.
+    
+     */
     @Override
     public Retorno registrarCliente(String cedula, String nombre) {
         if (!cedulaEsValida(cedula)) {
@@ -194,31 +254,46 @@ public class Sistema implements IObligatorio {
     }
 
     public boolean cedulaEsValida(String cedula) {
-        // Verifica si la cédula tiene exactamente 8 caracteres numéricos
+
         if (cedula == null || cedula.length() != 8) {
-            return false;  // Longitud incorrecta
+            return false;
         }
 
-        // Verificar que todos los caracteres sean dígitos numéricos
         for (int i = 0; i < cedula.length(); i++) {
             char c = cedula.charAt(i);
             if (c < '0' || c > '9') {
-                return false;  // No es un número
+                return false;
             }
         }
 
-        return true;  // La cédula es válida
+        return true;
     }
 
+    /*
+    Pre-condiciones:
+    Debe existir un cliente con la cedula proporcionada.
+    Debe existir un evento con el codigoEvento proporcionado.
+    
+    Post-condiciones:
+    Si el cliente no existe, retorna Retorno.error1().
+    Si el evento no existe, retorna Retorno.error2().
+    Si hay disponibilidad en la sala del evento (entradas vendidas < capacidad de la sala):
+    Se crea una nueva Entrada con el Evento, Cliente y Estado.ACTIVA.
+    La nuevaEntrada se agrega al final de la lista de entradas vendidas del evento.
+    La nuevaEntrada se apila en pilaEntradas.
+    Retorna Retorno.ok().
+    Si no hay disponibilidad en la sala del evento:
+    El Cliente se encola en la lista de espera del Evento.
+    Retorna Retorno.ok("Cliente agregado a lista de espera")
+     */
     @Override
     public Retorno comprarEntrada(String cedula, String codigoEvento) {
-        // Buscar el cliente
+
         Cliente clienteBuscado = buscarClientePorCedula(cedula);
         if (clienteBuscado == null) {
             return Retorno.error1();
         }
 
-        // Buscar el evento
         Evento eventoEncontrado = null;
         for (int i = 0; i < listaEventos.tamaño(); i++) {
             Evento evento = listaEventos.obtenerPorIndice(i);
@@ -232,18 +307,17 @@ public class Sistema implements IObligatorio {
             return Retorno.error2();
         }
 
-        // Verificar disponibilidad
         int entradasVendidas = eventoEncontrado.getEntradasVendidas().getCantidadnodos();
         int capacidadSala = eventoEncontrado.getSalaAsignada().getCapacidad();
 
         if (entradasVendidas < capacidadSala) {
-            // Hay disponibilidad, crear y asignar entrada
+
             Entrada nuevaEntrada = new Entrada(eventoEncontrado, clienteBuscado, Estado.ACTIVA);
             eventoEncontrado.getEntradasVendidas().agregarFinal(nuevaEntrada);
             pilaEntradas.apilar(nuevaEntrada);
             return Retorno.ok();
         } else {
-            // No hay disponibilidad, agregar a lista de espera
+
             eventoEncontrado.getListaEspera().encolar(clienteBuscado);
             return Retorno.ok("Cliente agregado a lista de espera");
         }
@@ -259,9 +333,23 @@ public class Sistema implements IObligatorio {
         return null;
     }
 
+    /*
+    Pre-condiciones:
+    Debe existir un evento con el codigo proporcionado.
+    El evento no debe tener entradas vendidas.
+    
+    Post-condiciones:
+    Si el evento no existe, retorna Retorno.error1().
+    Si el evento tiene entradas vendidas, retorna Retorno.error2().
+    Si las condiciones se cumplen:
+    Se libera la fecha ocupada en la sala asignada al evento.
+    El evento se elimina de listaEventos.
+    Retorna Retorno.ok().
+    
+     */
     @Override
     public Retorno eliminarEvento(String codigo) {
-        // 1. Verificar si el evento existe
+
         Evento eventoAEliminar = null;
         for (int i = 0; i < listaEventos.tamaño(); i++) {
             Evento evento = listaEventos.obtenerPorIndice(i);
@@ -272,35 +360,48 @@ public class Sistema implements IObligatorio {
         }
 
         if (eventoAEliminar == null) {
-            return Retorno.error1(); // ERROR 1: Evento no existe
+            return Retorno.error1();
         }
 
-        // 2. Verificar si hay entradas vendidas
         if (eventoAEliminar.getEntradasVendidas().cantElementos() > 0) {
-            return Retorno.error2(); // ERROR 2: Evento tiene entradas vendidas
+            return Retorno.error2();
         }
 
-        // 3. Liberar la sala asignada (eliminar la fecha ocupada)
         Sala salaAsignada = eventoAEliminar.getSalaAsignada();
         if (salaAsignada != null) {
             salaAsignada.getFechasOcupadas().eliminar(eventoAEliminar.getFecha());
         }
 
-        // 4. Eliminar el evento de la lista
         listaEventos.eliminar(eventoAEliminar);
 
-        return Retorno.ok(); // OK: Evento eliminado
+        return Retorno.ok();
     }
 
+    /*
+    Pre-condiciones:
+    Debe existir un cliente con la cedula proporcionada.
+    Debe existir un evento con el codigoEvento proporcionado.
+    El cliente debe tener al menos una entrada activa para el evento especificado.
+    
+    Post-condiciones:
+    Si el cliente no existe, retorna Retorno.error1().
+    Si el evento no existe, retorna Retorno.error2().
+    Si el cliente no tiene una entrada activa para el evento, retorna Retorno.error1().
+    Si una entrada activa del cliente para el evento es encontrada y eliminada:
+    Si la lista de espera del evento no está vacía, el primer cliente en la cola es desencolado.
+    Se crea una nueva Entrada para este cliente de la lista de espera, se le asigna el evento y Estado.ACTIVA.
+    La nueva entrada se agrega al final de las entradasVendidas del evento.
+    Retorna Retorno.ok().
+    
+     */
     @Override
     public Retorno devolverEntrada(String cedula, String codigoEvento) {
-        // 1. Verificar si el cliente existe
+
         Cliente clienteBuscado = buscarClientePorCedula(cedula);
         if (clienteBuscado == null) {
-            return Retorno.error1(); // ERROR 1: Cliente no existe
+            return Retorno.error1();
         }
 
-        // 2. Verificar si el evento existe
         Evento eventoEncontrado = null;
         for (int i = 0; i < listaEventos.tamaño(); i++) {
             Evento evento = listaEventos.obtenerPorIndice(i);
@@ -310,10 +411,9 @@ public class Sistema implements IObligatorio {
             }
         }
         if (eventoEncontrado == null) {
-            return Retorno.error2(); // ERROR 2: Evento no existe
+            return Retorno.error2();
         }
 
-        // 3. Buscar y eliminar la entrada del cliente para el evento
         boolean entradaEliminada = false;
         IListaDoble<Entrada> entradas = eventoEncontrado.getEntradasVendidas();
         for (int i = 0; i < entradas.cantElementos(); i++) {
@@ -326,28 +426,42 @@ public class Sistema implements IObligatorio {
         }
 
         if (!entradaEliminada) {
-            return Retorno.error1(); // Cliente no tiene entrada activa para el evento
+            return Retorno.error1();
         }
 
-        // 4. Reasignar entrada si hay clientes en espera (cola FIFO)
         if (!eventoEncontrado.getListaEspera().esVacia()) {
             Cliente primerEnEspera = eventoEncontrado.getListaEspera().desencolar();
             Entrada nuevaEntrada = new Entrada(eventoEncontrado, primerEnEspera, Estado.ACTIVA);
             eventoEncontrado.getEntradasVendidas().agregarFinal(nuevaEntrada);
         }
 
-        return Retorno.ok(); // OK: Entrada devuelta (y reasignada si aplica)
+        return Retorno.ok();
     }
 
+    /*
+    Pre-condiciones:
+    Debe existir un cliente con la cedula proporcionada.
+    Debe existir un evento con el codigoEvento proporcionado.
+    puntaje debe ser un valor entre 1 y 10 (ambos inclusive).
+    El cliente no debe haber calificado previamente el evento.
+    
+    Post-condiciones:
+    Si el cliente no existe, retorna Retorno.error1().
+    Si el evento no existe, retorna Retorno.error2().
+    Si el puntaje no es válido, retorna Retorno.error3().
+    Si el cliente ya calificó el evento, retorna Retorno.error4().
+    Si las condiciones se cumplen, se busca la entrada del cliente para el evento.
+    Se establece el puntaje y el comentario en la entrada encontrada.
+    Retorna Retorno.ok().
+     */
     @Override
     public Retorno calificarEvento(String cedula, String codigoEvento, int puntaje, String comentario) {
-        // 1. Verificar si el cliente existe
+
         Cliente clienteBuscado = buscarClientePorCedula(cedula);
         if (clienteBuscado == null) {
-            return Retorno.error1(); // ERROR 1: Cliente no existe
+            return Retorno.error1();
         }
 
-        // 2. Verificar si el evento existe
         Evento eventoEncontrado = null;
         for (int i = 0; i < listaEventos.tamaño(); i++) {
             Evento evento = listaEventos.obtenerPorIndice(i);
@@ -357,24 +471,21 @@ public class Sistema implements IObligatorio {
             }
         }
         if (eventoEncontrado == null) {
-            return Retorno.error2(); // ERROR 2: Evento no existe
+            return Retorno.error2();
         }
 
-        // 3. Verificar si el puntaje es válido
         if (puntaje < 1 || puntaje > 10) {
-            return Retorno.error3(); // ERROR 3: Puntaje inválido
+            return Retorno.error3();
         }
 
-        // 4. Verificar si el cliente ya calificó el evento
         IListaDoble<Entrada> entradas = eventoEncontrado.getEntradasVendidas();
         for (int i = 0; i < entradas.cantElementos(); i++) {
             Entrada entrada = entradas.obtenerPorIndice(i);
             if (entrada.getCliente().getCedula().equals(cedula) && entrada.getCalificacion() != null) {
-                return Retorno.error4(); // ERROR 4: Evento ya calificado por el cliente
+                return Retorno.error4();
             }
         }
 
-        // 5. Registrar la calificación
         for (int i = 0; i < entradas.cantElementos(); i++) {
             Entrada entrada = entradas.obtenerPorIndice(i);
             if (entrada.getCliente().getCedula().equals(cedula)) {
@@ -384,9 +495,16 @@ public class Sistema implements IObligatorio {
             }
         }
 
-        return Retorno.ok(); // OK: Calificación registrada
+        return Retorno.ok();
     }
 
+    /*
+    Pre-condiciones:Ninguna.
+
+    Post-condiciones:
+    Si no hay salas registradas (listaSalas está vacía), retorna Retorno.OK con el mensaje "No hay salas registradas.".
+    Si hay salas, retorna Retorno.OK con una cadena que contiene las salas en el formato "nombre-capacidad" separadas por "#". El orden de las salas en la cadena de salida no está garantizado de forma específica (depende del orden en que se agregaron a la lista y cómo se copian/procesan internamente si no hay un ordenamiento explícito).
+     */
     @Override
     public Retorno listarSalas() {
         if (listaSalas.tamaño() == 0) {
@@ -420,6 +538,13 @@ public class Sistema implements IObligatorio {
         return salida;
     }
 
+    /*
+    Pre-condiciones:Ninguna.
+    
+    Post-condiciones:
+    Si listaEventos es nula o está vacía, retorna Retorno.ok() (sin mensaje o con mensaje vacío, dependiendo de la implementación de Retorno.ok()).
+    Si hay eventos, retorna Retorno.ok() con una cadena que contiene la información de los eventos, ordenada por código de evento de forma ascendente. El formato de cada evento en la cadena es "codigo-descripcion-nombreSala-disponibles-vendidas", separados por "#".
+     */
     @Override
     public Retorno listarEventos() {
         if (listaEventos == null || listaEventos.tamaño() == 0) {
@@ -482,6 +607,13 @@ public class Sistema implements IObligatorio {
         return resultado;
     }
 
+    /*
+    Pre-condiciones:Ninguna.
+    
+    Post-condiciones:
+    Si no hay clientes registrados (listaClientes está vacía), retorna Retorno.OK con el mensaje "No hay clientes registrados.".
+    Si hay clientes, retorna Retorno.OK con una cadena que contiene los clientes en el formato "cedula-nombre" separados por "#", ordenados por cédula de forma ascendente.
+     */
     @Override
     public Retorno listarClientes() {
         if (listaClientes.getInicio() == null) {
@@ -526,6 +658,19 @@ public class Sistema implements IObligatorio {
         return salida;
     }
 
+    /*
+    Pre-condiciones:
+    vistaSala no debe ser nulo.
+    vistaSala debe tener al menos una fila y al menos una columna.
+    
+    Post-condiciones:
+    Si vistaSala no es válida (nula, o sin filas/columnas), retorna Retorno.error1().
+    Si es válida, analiza la matriz vistaSala para determinar si es "óptima".
+    Una sala es considerada "óptima" si tiene al menos 2 columnas "óptimas".
+    Una columna es "óptima" si el máximo número de asientos "O" (ocupados) consecutivos en esa columna es mayor que el número de asientos "X" (libres) en esa misma columna.
+    Retorna Retorno.ok("Es óptimo") si la sala cumple el criterio de ser óptima.
+    Retorna Retorno.ok("No es óptimo") si la sala no cumple el criterio de ser óptima.
+     */
     @Override
     public Retorno esSalaOptima(String vistaSala[][]) {
         if (!esVistaValida(vistaSala)) {
@@ -581,6 +726,17 @@ public class Sistema implements IObligatorio {
         return maxOcupadosConsecutivos > libres;
     }
 
+    /*
+    Pre-condiciones:
+    n debe ser mayor o igual a 1.
+    Debe existir un evento con el codigo proporcionado.
+    
+    Post-condiciones:
+    Si n es menor que 1, retorna Retorno.error2().
+    Si no se encuentra un evento con el codigo proporcionado, retorna Retorno.error1().
+    Si el evento existe pero no tiene entradas vendidas, retorna Retorno.OK con una cadena vacía.
+    Si hay entradas vendidas, retorna Retorno.OK con una cadena que lista los últimos n clientes que compraron entradas para el evento. El formato es "cedula-nombre" y los clientes están separados por "#". Si el número total de entradas vendidas es menor que n, se listan todos los clientes. Los clientes se listan en el orden en que se agregaron a la lista de entradas vendidas del evento (es decir, los más recientes primero, hasta n).
+     */
     @Override
     public Retorno listarClientesDeEvento(String codigo, int n) {
         if (n < 1) {
@@ -614,6 +770,17 @@ public class Sistema implements IObligatorio {
     }
 
     @Override
+    /*
+    Pre-condiciones:Ninguna.
+    
+    Post-condiciones:
+    Si listaEventos está vacía, retorna Retorno.OK con una cadena vacía.
+    Recorre todos los eventos y filtra aquellos que tienen clientes en su lista de espera.
+    Ordena los eventos con clientes en espera por su código de evento de forma ascendente.
+    Para cada evento en espera, desencola y vuelve a encolar a los clientes para copiarlos en una lista simple.
+    Ordena los clientes en la lista de espera de cada evento por su cédula de forma ascendente.
+    Retorna Retorno.OK con una cadena que lista los eventos y sus clientes en espera. El formato es "codigoEvento-cedulaCliente" y los pares están separados por "#". Si hay múltiples clientes para un evento, cada uno aparece como un par separado por "#".
+     */
     public Retorno listarEsperaEvento() {
         if (listaEventos.tamaño() == 0) {
             return new Retorno(Retorno.Resultado.OK, "");
@@ -627,7 +794,6 @@ public class Sistema implements IObligatorio {
             }
         }
 
-        // Ordenar eventos por código usando bubble sort
         eventosConEspera.bubbleSort((e1, e2) -> e1.getCodigo().compareTo(e2.getCodigo()));
 
         StringBuilder resultado = new StringBuilder();
@@ -649,10 +815,8 @@ public class Sistema implements IObligatorio {
                 colaOriginal.encolar(colaCopia.desencolar());
             }
 
-            // Ordenar clientes por cédula usando bubble sort
             listaEspera.bubbleSort((c1, c2) -> c1.getCedula().compareTo(c2.getCedula()));
 
-            // Agregar al resultado
             for (int j = 0; j < listaEspera.tamaño(); j++) {
                 if (resultado.length() > 0) {
                     resultado.append("#");
@@ -665,112 +829,104 @@ public class Sistema implements IObligatorio {
         return new Retorno(Retorno.Resultado.OK, resultado.toString());
     }
 
+    /*
+    Pre-condiciones:
+    n debe ser mayor que 0.
     
-    
-    
-
-    
- 
-
-    
-  
-    
+    Post-condiciones:
+    Si n es menor o igual a 0, retorna Retorno.error1().
+    Si pilaEntradas está vacía, retorna Retorno.ok("No hay entradas vendidas para deshacer.").
+    Desapila hasta n entradas de pilaEntradas (o menos si la pila tiene menos de n elementos).
+    Para cada entrada desapilada:
+    Se elimina la entrada de la lista de entradas vendidas del evento correspondiente.
+    Si la lista de espera del evento no está vacía, el primer cliente en espera es desencolado, se crea una nueva entrada para él, se agrega a las entradas vendidas del evento y se apila en pilaEntradas.
+    Retorna Retorno.ok() con una cadena que lista los códigos de evento y las cédulas de los clientes cuyas compras fueron deshechas (o reasignadas). El formato es "codigoEvento-cedulaCliente" y los pares están separados por "#". La lista de resultados está ordenada primero por codigoEvento ascendente, y luego por cedulaCliente ascendente si los códigos de evento son iguales.
+     */
     @Override
- public Retorno deshacerUtimasCompras(int n) {
+    public Retorno deshacerUtimasCompras(int n) {
         if (n <= 0) {
-            return Retorno.error1(); // ERROR 1: n no es válido
+            return Retorno.error1();
         }
 
         if (pilaEntradas.esVacia()) {
-            return Retorno.ok("No hay entradas vendidas para deshacer."); //
+            return Retorno.ok("No hay entradas vendidas para deshacer.");
         }
 
-        // 1. Extraer las 'n' entradas más recientes de la pila principal.
-        // Las almacenaremos en una ListaSimple. Al usar agregarFin(), el primer elemento
-        // que desapilamos (el más reciente) estará en el índice 0 de la lista.
-        // Esto significa que la lista estará ordenada de la más reciente a la más antigua (de las N deshechas).
         ListaSimple<Entrada> entradasADeshacer = new ListaSimple<>();
         int contador = 0;
         while (contador < n && !pilaEntradas.esVacia()) {
-            entradasADeshacer.agregarFin(pilaEntradas.desapilar()); //
+            entradasADeshacer.agregarFin(pilaEntradas.desapilar());
             contador++;
         }
 
-        // 2. Procesar cada entrada extraída.
-        // Iteramos desde el índice 0, lo que significa que procesaremos la compra más reciente primero,
-        // luego la segunda más reciente, y así sucesivamente.
         ListaSimple<String> resultados = new ListaSimple<>();
-        for (int i = 0; i < entradasADeshacer.tamaño(); i++) { //
-            Entrada entrada = entradasADeshacer.obtenerPorIndice(i); //
-            Evento evento = entrada.getEvento(); //
+        for (int i = 0; i < entradasADeshacer.tamaño(); i++) {
+            Entrada entrada = entradasADeshacer.obtenerPorIndice(i);
+            Evento evento = entrada.getEvento();
 
-            // 2.1 Eliminar la entrada del evento de su lista de entradas vendidas
-            evento.getEntradasVendidas().borrarElemento(entrada); //
+            evento.getEntradasVendidas().borrarElemento(entrada);
 
-            // 2.2 Si hay clientes en la lista de espera del evento, asignarles una nueva entrada
-            if (!evento.getListaEspera().esVacia()) { //
-                Cliente clienteEnEspera = evento.getListaEspera().desencolar(); //
-                Entrada nuevaEntrada = new Entrada(evento, clienteEnEspera, Estado.ACTIVA); //
-                evento.getEntradasVendidas().agregarFinal(nuevaEntrada); //
-                pilaEntradas.apilar(nuevaEntrada); // La nueva entrada se convierte en la compra más reciente del sistema
+            if (!evento.getListaEspera().esVacia()) {
+                Cliente clienteEnEspera = evento.getListaEspera().desencolar();
+                Entrada nuevaEntrada = new Entrada(evento, clienteEnEspera, Estado.ACTIVA);
+                evento.getEntradasVendidas().agregarFinal(nuevaEntrada);
+                pilaEntradas.apilar(nuevaEntrada);
             }
 
-            // 2.3 Registrar el resultado para la salida (códigoEvento-cedulaCliente)
-            resultados.agregar(evento.getCodigo() + "-" + entrada.getCliente().getCedula()); //
+            resultados.agregar(evento.getCodigo() + "-" + entrada.getCliente().getCedula());
         }
 
-        // 3. Ordenar los resultados para la salida final según los criterios
-        // (código de evento ascendente, luego cédula ascendente).
-        // Implementación de Bubble Sort aquí, ya que no se permiten métodos auxiliares.
-        for (int i = 0; i < resultados.tamaño() - 1; i++) { //
-            for (int j = 0; j < resultados.tamaño() - 1 - i; j++) { //
-                String s1 = resultados.obtenerPorIndice(j); //
-                String s2 = resultados.obtenerPorIndice(j + 1); //
+        for (int i = 0; i < resultados.tamaño() - 1; i++) {
+            for (int j = 0; j < resultados.tamaño() - 1 - i; j++) {
+                String s1 = resultados.obtenerPorIndice(j);
+                String s2 = resultados.obtenerPorIndice(j + 1);
 
-                String[] partesA = s1.split("-"); //
-                String[] partesB = s2.split("-"); //
+                String[] partesA = s1.split("-");
+                String[] partesB = s2.split("-");
 
-                int cmpCodigo = partesA[0].compareTo(partesB[0]); //
+                int cmpCodigo = partesA[0].compareTo(partesB[0]);
 
-                if (cmpCodigo > 0) { //
-                    // Intercambiar si el código de A es mayor que el de B
-                    resultados.modificarElemento(j, s2); //
-                    resultados.modificarElemento(j + 1, s1); //
-                } else if (cmpCodigo == 0) { // Si los códigos son iguales, comparar por cédula
-                    int cmpCedula = partesA[1].compareTo(partesB[1]); //
-                    if (cmpCedula > 0) { //
-                        // Intercambiar si la cédula de A es mayor que la de B
-                        resultados.modificarElemento(j, s2); //
-                        resultados.modificarElemento(j + 1, s1); //
+                if (cmpCodigo > 0) {
+
+                    resultados.modificarElemento(j, s2);
+                    resultados.modificarElemento(j + 1, s1);
+                } else if (cmpCodigo == 0) {
+                    int cmpCedula = partesA[1].compareTo(partesB[1]);
+                    if (cmpCedula > 0) {
+
+                        resultados.modificarElemento(j, s2);
+                        resultados.modificarElemento(j + 1, s1);
                     }
                 }
             }
         }
 
-        // 4. Construir el string final de salida
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < resultados.tamaño(); i++) { //
-            if (i > 0) { //
-                sb.append("#"); //
+        for (int i = 0; i < resultados.tamaño(); i++) {
+            if (i > 0) {
+                sb.append("#");
             }
-            sb.append(resultados.obtenerPorIndice(i)); //
+            sb.append(resultados.obtenerPorIndice(i));
         }
 
-        return Retorno.ok(sb.toString()); //
+        return Retorno.ok(sb.toString());
     }
-    
 
+    /*
+    Pre-condiciones:Ninguna.
     
-    
-    
-    
-    
-    
-    
+    Post-condiciones:
+    Si no hay eventos registrados (listaEventos está vacía) o si ningún evento tiene calificaciones, retorna Retorno.OK con una cadena vacía.
+    Calcula el promedio de las calificaciones para cada evento.
+    Identifica el (o los) evento(s) con el promedio de calificación más alto.
+    Si hay múltiples eventos con el mismo mejor promedio, se incluyen todos.
+    Los eventos con el mejor promedio se ordenan por su código de evento de forma ascendente.
+    Retorna Retorno.OK con una cadena que lista los códigos de los eventos mejor puntuados y su puntaje promedio (como entero). El formato es "codigoEvento-puntaje" y los pares están separados por "#".
+     */
     @Override
     public Retorno eventoMejorPuntuado() {
         if (listaEventos.tamaño() == 0) {
-            return new Retorno(Retorno.Resultado.OK, ""); // No hay eventos
+            return new Retorno(Retorno.Resultado.OK, "");
         }
 
         double mejorPromedio = -1;
@@ -794,7 +950,7 @@ public class Sistema implements IObligatorio {
 
                 if (promedio > mejorPromedio) {
                     mejorPromedio = promedio;
-                    eventosMejorPuntaje = new ListaSimple<>(); // limpiar anteriores
+                    eventosMejorPuntaje = new ListaSimple<>();
                     eventosMejorPuntaje.agregar(evento);
                 } else if (promedio == mejorPromedio) {
                     eventosMejorPuntaje.agregar(evento);
@@ -803,10 +959,9 @@ public class Sistema implements IObligatorio {
         }
 
         if (eventosMejorPuntaje.tamaño() == 0) {
-            return new Retorno(Retorno.Resultado.OK, ""); // No hay calificaciones
+            return new Retorno(Retorno.Resultado.OK, "");
         }
 
-        // Ordenar por código de evento
         ListaSimple<Evento> eventosOrdenados = new ListaSimple<>();
         while (eventosMejorPuntaje.tamaño() > 0) {
             Evento menor = eventosMejorPuntaje.obtenerPorIndice(0);
@@ -824,28 +979,35 @@ public class Sistema implements IObligatorio {
             eventosMejorPuntaje.eliminar(menor);
         }
 
-        // Armar string resultado
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < eventosOrdenados.tamaño(); i++) {
             Evento e = eventosOrdenados.obtenerPorIndice(i);
             if (i > 0) {
                 sb.append("#");
             }
-            sb.append(e.getCodigo()).append("-").append((int) mejorPromedio); // promedio como entero
+            sb.append(e.getCodigo()).append("-").append((int) mejorPromedio);
         }
 
         return new Retorno(Retorno.Resultado.OK, sb.toString());
     }
 
+    /*
+    Pre-condiciones:
+    Debe existir un cliente con la cedula proporcionada.
+    
+    Post-condiciones:
+    Si el cliente no existe, retorna Retorno.error1().
+    Si el cliente existe pero no tiene compras de entradas, retorna Retorno.ok("").
+    Si el cliente tiene compras, retorna Retorno.ok() con una cadena que lista todas las compras del cliente. Las compras se ordenan cronológicamente por la fecha del evento (más antigua primero). El formato de cada compra en la cadena es "codigoEvento-descripcionEvento-fechaEvento (dd/MM/yyyy)", y las compras están separadas por "#".
+     */
     @Override
     public Retorno comprasDeCliente(String cedula) {
-        // 1. Verificar cliente
+
         Cliente cliente = buscarClientePorCedula(cedula);
         if (cliente == null) {
             return Retorno.error1();
         }
 
-        // 2. Recopilar entradas del cliente
         ListaSimple<Entrada> entradasCliente = new ListaSimple<>();
         for (int i = 0; i < listaEventos.tamaño(); i++) {
             Evento evento = listaEventos.obtenerPorIndice(i);
@@ -858,23 +1020,19 @@ public class Sistema implements IObligatorio {
             }
         }
 
-        // 3. Ordenar por fecha (más antigua primero)
         entradasCliente.bubbleSort((e1, e2)
                 -> e1.getEvento().getFecha().compareTo(e2.getEvento().getFecha())
         );
 
-        // 4. Construir resultado EXACTO como espera el test
         StringBuilder sb = new StringBuilder();
 
         if (entradasCliente.tamaño() > 0) {
             Entrada e0 = entradasCliente.obtenerPorIndice(0);
             Evento ev0 = e0.getEvento();
 
-            // Solo código del evento, sin corchete
             sb.append(ev0.getCodigo());
-            sb.append("-"); // separador guion
+            sb.append("-");
 
-            // Abro corchete justo antes de la descripcion
             sb.append(ev0.getDescripcion())
                     .append("-")
                     .append(ev0.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
@@ -896,32 +1054,39 @@ public class Sistema implements IObligatorio {
         return Retorno.ok(sb.toString());
     }
 
+    /*
+    Pre-condiciones:
+    mes debe ser un valor entre 1 y 12 (ambos inclusive).
+    
+    Post-condiciones:
+    Si mes no está en el rango válido (1-12), retorna Retorno.error1().
+    Recopila todas las entradas vendidas para eventos que ocurren en el mes especificado.
+    Agrupa las entradas por fecha y cuenta la cantidad de entradas vendidas para cada día.
+    Ordena los resultados por fecha cronológicamente.
+    Retorna Retorno.ok() con una cadena que lista la cantidad de entradas vendidas por día para el mes dado. El formato es "dd/MM/yyyy-cantidadEntradas", y los pares están separados por "#". La cantidad de entradas se incrementa en 1, según la implementación del código.
+     */
     @Override
     public Retorno comprasXDia(int mes) {
-        // 1. Validar que el mes esté entre 1 y 12
+
         if (mes < 1 || mes > 12) {
             return Retorno.error1();
         }
 
-        // 2. Crear listas para almacenar fechas y cantidades
         ListaSimple<String> fechas = new ListaSimple<>();
         ListaSimple<Integer> cantidades = new ListaSimple<>();
 
-        // 3. Recorrer todos los eventos
         for (int i = 0; i < listaEventos.tamaño(); i++) {
             Evento evento = listaEventos.obtenerPorIndice(i);
             LocalDate fechaEvento = evento.getFecha();
 
-            // 4. Filtrar por mes
             if (fechaEvento.getMonthValue() == mes) {
                 String fechaStr = fechaEvento.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
                 int entradasVendidas = evento.getEntradasVendidas().cantElementos();
 
-                // 5. Buscar si la fecha ya existe
                 boolean encontrada = false;
                 for (int j = 0; j < fechas.tamaño(); j++) {
                     if (fechas.obtenerPorIndice(j).equals(fechaStr)) {
-                        // 6. Sumar a la cantidad existente
+
                         int cantidadActual = cantidades.obtenerPorIndice(j);
                         cantidades.modificarElemento(j, cantidadActual + entradasVendidas);
                         encontrada = true;
@@ -929,7 +1094,6 @@ public class Sistema implements IObligatorio {
                     }
                 }
 
-                // 7. Si es una fecha nueva, agregarla
                 if (!encontrada) {
                     fechas.agregar(fechaStr);
                     cantidades.agregar(entradasVendidas);
@@ -937,10 +1101,8 @@ public class Sistema implements IObligatorio {
             }
         }
 
-        // 8. Ordenar las fechas cronológicamente
         ordenarFechasYCantidades(fechas, cantidades);
 
-        // 9. Construir el string de resultado
         StringBuilder resultado = new StringBuilder();
         for (int i = 0; i < fechas.tamaño(); i++) {
             if (i > 0) {
@@ -954,21 +1116,18 @@ public class Sistema implements IObligatorio {
         return Retorno.ok(resultado.toString());
     }
 
-// Método auxiliar para ordenar por fecha (implementación con Bubble Sort)
     private void ordenarFechasYCantidades(ListaSimple<String> fechas, ListaSimple<Integer> cantidades) {
         for (int i = 0; i < fechas.tamaño() - 1; i++) {
             for (int j = 0; j < fechas.tamaño() - i - 1; j++) {
                 String fechaActual = fechas.obtenerPorIndice(j);
                 String fechaSiguiente = fechas.obtenerPorIndice(j + 1);
 
-                // Comparar fechas en formato dd/MM/yyyy como strings
                 if (fechaActual.compareTo(fechaSiguiente) > 0) {
-                    // Intercambiar fechas
+
                     String tempFecha = fechaActual;
                     fechas.modificarElemento(j, fechaSiguiente);
                     fechas.modificarElemento(j + 1, tempFecha);
 
-                    // Intercambiar cantidades correspondientes
                     int tempCant = cantidades.obtenerPorIndice(j);
                     cantidades.modificarElemento(j, cantidades.obtenerPorIndice(j + 1));
                     cantidades.modificarElemento(j + 1, tempCant);
