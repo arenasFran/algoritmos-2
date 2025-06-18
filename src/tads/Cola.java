@@ -1,6 +1,8 @@
 package tads;
 
-public class Cola<T> {
+import tads.InterfacesTads.ICola;
+
+public class Cola<T> implements ICola<T> {
     private Nodo<T> primero;
     private Nodo<T> ultimo;
     private int cantidad;

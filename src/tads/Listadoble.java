@@ -12,7 +12,7 @@ public class ListaDoble<T extends Comparable<T>> implements IListaDoble<T> {
     public ListaDoble(int cantidadmaximaaceptada) {
         this.primero = null;
         this.ultimo = null;
-        this.cantidadnodos = 0;
+    
         this.cantidadmaximaaceptada = cantidadmaximaaceptada;
     }
 

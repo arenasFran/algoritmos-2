@@ -13,19 +13,21 @@ import tads.ListaSimple;
 import tads.ListaDoble;
 import tads.Nodo;
 import tads.Cola;
+import tads.InterfacesTads.IPila;
+import tads.Pila;
 
 public class Sistema implements IObligatorio {
 
     private IListaSimple<Cliente> listaClientes;
     private IListaSimple<Sala> listaSalas;
     private IListaSimple<Evento> listaEventos;
-    private IListaSimple<Entrada> listaEntradas;
+    public IPila<Entrada> pilaEntradas;
 
     public Sistema() {
         listaClientes = new ListaSimple<Cliente>();
         listaSalas = new ListaSimple<Sala>();
         listaEventos = new ListaSimple<Evento>();
-        listaEntradas = new ListaSimple<Entrada>();
+        pilaEntradas = new Pila<Entrada>();
     }
 
     @Override
@@ -238,7 +240,7 @@ public class Sistema implements IObligatorio {
             // Hay disponibilidad, crear y asignar entrada
             Entrada nuevaEntrada = new Entrada(eventoEncontrado, clienteBuscado, Estado.ACTIVA);
             eventoEncontrado.getEntradasVendidas().agregarFinal(nuevaEntrada);
-            listaEntradas.agregar(nuevaEntrada);
+            pilaEntradas.apilar(nuevaEntrada);
             return Retorno.ok();
         } else {
             // No hay disponibilidad, agregar a lista de espera
@@ -663,40 +665,108 @@ public class Sistema implements IObligatorio {
         return new Retorno(Retorno.Resultado.OK, resultado.toString());
     }
 
+    
+    
+    
+
+    
+ 
+
+    
+  
+    
     @Override
-    public Retorno deshacerUtimasCompras(int n) {
+ public Retorno deshacerUtimasCompras(int n) {
         if (n <= 0) {
-            return Retorno.error1();
+            return Retorno.error1(); // ERROR 1: n no es válido
         }
 
-        if (listaEntradas.tamaño() == 0) {
-            return Retorno.ok("No hay entradas vendidas para deshacer.");
+        if (pilaEntradas.esVacia()) {
+            return Retorno.ok("No hay entradas vendidas para deshacer."); //
         }
 
-        int entradasADeshacer = Math.min(n, listaEntradas.tamaño());
-        StringBuilder resultado = new StringBuilder();
+        // 1. Extraer las 'n' entradas más recientes de la pila principal.
+        // Las almacenaremos en una ListaSimple. Al usar agregarFin(), el primer elemento
+        // que desapilamos (el más reciente) estará en el índice 0 de la lista.
+        // Esto significa que la lista estará ordenada de la más reciente a la más antigua (de las N deshechas).
+        ListaSimple<Entrada> entradasADeshacer = new ListaSimple<>();
+        int contador = 0;
+        while (contador < n && !pilaEntradas.esVacia()) {
+            entradasADeshacer.agregarFin(pilaEntradas.desapilar()); //
+            contador++;
+        }
 
-        for (int i = 0; i < entradasADeshacer; i++) {
-            Entrada entrada = listaEntradas.eliminarFinal(); // ← IMPORTANTE
-            Evento evento = entrada.getEvento();
-            evento.getEntradasVendidas().borrarElemento(entrada);
+        // 2. Procesar cada entrada extraída.
+        // Iteramos desde el índice 0, lo que significa que procesaremos la compra más reciente primero,
+        // luego la segunda más reciente, y así sucesivamente.
+        ListaSimple<String> resultados = new ListaSimple<>();
+        for (int i = 0; i < entradasADeshacer.tamaño(); i++) { //
+            Entrada entrada = entradasADeshacer.obtenerPorIndice(i); //
+            Evento evento = entrada.getEvento(); //
 
-            if (!evento.getListaEspera().esVacia()) {
-                Cliente clienteEnEspera = evento.getListaEspera().desencolar();
-                Entrada nuevaEntrada = new Entrada(evento, clienteEnEspera, Estado.ACTIVA);
-                evento.getEntradasVendidas().agregarFinal(nuevaEntrada);
-                listaEntradas.agregar(nuevaEntrada); // ← se registra la nueva entrada
+            // 2.1 Eliminar la entrada del evento de su lista de entradas vendidas
+            evento.getEntradasVendidas().borrarElemento(entrada); //
+
+            // 2.2 Si hay clientes en la lista de espera del evento, asignarles una nueva entrada
+            if (!evento.getListaEspera().esVacia()) { //
+                Cliente clienteEnEspera = evento.getListaEspera().desencolar(); //
+                Entrada nuevaEntrada = new Entrada(evento, clienteEnEspera, Estado.ACTIVA); //
+                evento.getEntradasVendidas().agregarFinal(nuevaEntrada); //
+                pilaEntradas.apilar(nuevaEntrada); // La nueva entrada se convierte en la compra más reciente del sistema
             }
 
-            if (resultado.length() > 0) {
-                resultado.append("#");
-            }
-            resultado.append(evento.getCodigo()).append("-").append(entrada.getCliente().getCedula());
+            // 2.3 Registrar el resultado para la salida (códigoEvento-cedulaCliente)
+            resultados.agregar(evento.getCodigo() + "-" + entrada.getCliente().getCedula()); //
         }
 
-        return Retorno.ok(resultado.toString());
+        // 3. Ordenar los resultados para la salida final según los criterios
+        // (código de evento ascendente, luego cédula ascendente).
+        // Implementación de Bubble Sort aquí, ya que no se permiten métodos auxiliares.
+        for (int i = 0; i < resultados.tamaño() - 1; i++) { //
+            for (int j = 0; j < resultados.tamaño() - 1 - i; j++) { //
+                String s1 = resultados.obtenerPorIndice(j); //
+                String s2 = resultados.obtenerPorIndice(j + 1); //
+
+                String[] partesA = s1.split("-"); //
+                String[] partesB = s2.split("-"); //
+
+                int cmpCodigo = partesA[0].compareTo(partesB[0]); //
+
+                if (cmpCodigo > 0) { //
+                    // Intercambiar si el código de A es mayor que el de B
+                    resultados.modificarElemento(j, s2); //
+                    resultados.modificarElemento(j + 1, s1); //
+                } else if (cmpCodigo == 0) { // Si los códigos son iguales, comparar por cédula
+                    int cmpCedula = partesA[1].compareTo(partesB[1]); //
+                    if (cmpCedula > 0) { //
+                        // Intercambiar si la cédula de A es mayor que la de B
+                        resultados.modificarElemento(j, s2); //
+                        resultados.modificarElemento(j + 1, s1); //
+                    }
+                }
+            }
+        }
+
+        // 4. Construir el string final de salida
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < resultados.tamaño(); i++) { //
+            if (i > 0) { //
+                sb.append("#"); //
+            }
+            sb.append(resultados.obtenerPorIndice(i)); //
+        }
+
+        return Retorno.ok(sb.toString()); //
     }
+    
 
+    
+    
+    
+    
+    
+    
+    
     @Override
     public Retorno eventoMejorPuntuado() {
         if (listaEventos.tamaño() == 0) {
@@ -826,121 +896,86 @@ public class Sistema implements IObligatorio {
         return Retorno.ok(sb.toString());
     }
 
+    @Override
+    public Retorno comprasXDia(int mes) {
+        // 1. Validar que el mes esté entre 1 y 12
+        if (mes < 1 || mes > 12) {
+            return Retorno.error1();
+        }
 
-    
-@Override
-public Retorno comprasXDia(int mes) {
-    // 1. Validar que el mes esté entre 1 y 12
-    if (mes < 1 || mes > 12) {
-        return Retorno.error1();
-    }
+        // 2. Crear listas para almacenar fechas y cantidades
+        ListaSimple<String> fechas = new ListaSimple<>();
+        ListaSimple<Integer> cantidades = new ListaSimple<>();
 
-    // 2. Crear listas para almacenar fechas y cantidades
-    ListaSimple<String> fechas = new ListaSimple<>();
-    ListaSimple<Integer> cantidades = new ListaSimple<>();
+        // 3. Recorrer todos los eventos
+        for (int i = 0; i < listaEventos.tamaño(); i++) {
+            Evento evento = listaEventos.obtenerPorIndice(i);
+            LocalDate fechaEvento = evento.getFecha();
 
-    // 3. Recorrer todos los eventos
-    for (int i = 0; i < listaEventos.tamaño(); i++) {
-        Evento evento = listaEventos.obtenerPorIndice(i);
-        LocalDate fechaEvento = evento.getFecha();
+            // 4. Filtrar por mes
+            if (fechaEvento.getMonthValue() == mes) {
+                String fechaStr = fechaEvento.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                int entradasVendidas = evento.getEntradasVendidas().cantElementos();
 
-        // 4. Filtrar por mes
-        if (fechaEvento.getMonthValue() == mes) {
-            String fechaStr = fechaEvento.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-            int entradasVendidas = evento.getEntradasVendidas().cantElementos();
+                // 5. Buscar si la fecha ya existe
+                boolean encontrada = false;
+                for (int j = 0; j < fechas.tamaño(); j++) {
+                    if (fechas.obtenerPorIndice(j).equals(fechaStr)) {
+                        // 6. Sumar a la cantidad existente
+                        int cantidadActual = cantidades.obtenerPorIndice(j);
+                        cantidades.modificarElemento(j, cantidadActual + entradasVendidas);
+                        encontrada = true;
+                        break;
+                    }
+                }
 
-            // 5. Buscar si la fecha ya existe
-            boolean encontrada = false;
-            for (int j = 0; j < fechas.tamaño(); j++) {
-                if (fechas.obtenerPorIndice(j).equals(fechaStr)) {
-                    // 6. Sumar a la cantidad existente
-                    int cantidadActual = cantidades.obtenerPorIndice(j);
-                    cantidades.modificarElemento(j, cantidadActual + entradasVendidas);
-                    encontrada = true;
-                    break;
+                // 7. Si es una fecha nueva, agregarla
+                if (!encontrada) {
+                    fechas.agregar(fechaStr);
+                    cantidades.agregar(entradasVendidas);
                 }
             }
+        }
 
-            // 7. Si es una fecha nueva, agregarla
-            if (!encontrada) {
-                fechas.agregar(fechaStr);
-                cantidades.agregar(entradasVendidas);
+        // 8. Ordenar las fechas cronológicamente
+        ordenarFechasYCantidades(fechas, cantidades);
+
+        // 9. Construir el string de resultado
+        StringBuilder resultado = new StringBuilder();
+        for (int i = 0; i < fechas.tamaño(); i++) {
+            if (i > 0) {
+                resultado.append("#");
             }
+            resultado.append(fechas.obtenerPorIndice(i))
+                    .append("-")
+                    .append(cantidades.obtenerPorIndice(i) + 1);
         }
+
+        return Retorno.ok(resultado.toString());
     }
-
-    // 8. Ordenar las fechas cronológicamente
-    ordenarFechasYCantidades(fechas, cantidades);
-
-    // 9. Construir el string de resultado
-    StringBuilder resultado = new StringBuilder();
-    for (int i = 0; i < fechas.tamaño(); i++) {
-        if (i > 0) {
-            resultado.append("#");
-        }
-        resultado.append(fechas.obtenerPorIndice(i))
-                .append("-")
-                .append(cantidades.obtenerPorIndice(i)+1);
-    }
-
-    return Retorno.ok(resultado.toString());
-}
 
 // Método auxiliar para ordenar por fecha (implementación con Bubble Sort)
-private void ordenarFechasYCantidades(ListaSimple<String> fechas, ListaSimple<Integer> cantidades) {
-    for (int i = 0; i < fechas.tamaño() - 1; i++) {
-        for (int j = 0; j < fechas.tamaño() - i - 1; j++) {
-            String fechaActual = fechas.obtenerPorIndice(j);
-            String fechaSiguiente = fechas.obtenerPorIndice(j + 1);
-            
-            // Comparar fechas en formato dd/MM/yyyy como strings
-            if (fechaActual.compareTo(fechaSiguiente) > 0) {
-                // Intercambiar fechas
-                String tempFecha = fechaActual;
-                fechas.modificarElemento(j, fechaSiguiente);
-                fechas.modificarElemento(j + 1, tempFecha);
-                
-                // Intercambiar cantidades correspondientes
-                int tempCant = cantidades.obtenerPorIndice(j);
-                cantidades.modificarElemento(j, cantidades.obtenerPorIndice(j + 1));
-                cantidades.modificarElemento(j + 1, tempCant);
+    private void ordenarFechasYCantidades(ListaSimple<String> fechas, ListaSimple<Integer> cantidades) {
+        for (int i = 0; i < fechas.tamaño() - 1; i++) {
+            for (int j = 0; j < fechas.tamaño() - i - 1; j++) {
+                String fechaActual = fechas.obtenerPorIndice(j);
+                String fechaSiguiente = fechas.obtenerPorIndice(j + 1);
+
+                // Comparar fechas en formato dd/MM/yyyy como strings
+                if (fechaActual.compareTo(fechaSiguiente) > 0) {
+                    // Intercambiar fechas
+                    String tempFecha = fechaActual;
+                    fechas.modificarElemento(j, fechaSiguiente);
+                    fechas.modificarElemento(j + 1, tempFecha);
+
+                    // Intercambiar cantidades correspondientes
+                    int tempCant = cantidades.obtenerPorIndice(j);
+                    cantidades.modificarElemento(j, cantidades.obtenerPorIndice(j + 1));
+                    cantidades.modificarElemento(j + 1, tempCant);
+                }
             }
         }
     }
-}
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
     public Evento buscarEvento(String codigo) {
         for (int i = 0; i < listaEventos.tamaño(); i++) {

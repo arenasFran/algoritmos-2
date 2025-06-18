@@ -12,15 +12,14 @@
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/test/sistemaAutogestion/IObligatorioTest1.java</file>
-            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/test/sistemaAutogestion/DeshacerUltimasComprasTestPersonalizado.java</file>
-            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/sistemaAutogestion/Retorno.java</file>
             <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/sistemaAutogestion/Sistema.java</file>
-            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/tads/InterfacesTads/IListaSimple.java</file>
-            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/tads/ListaSimple.java</file>
-            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/dominio/Entrada.java</file>
+            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/tads/Pila.java</file>
+            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/test/sistemaAutogestion/DeshacerUltimasComprasTestPersonalizado.java</file>
+            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/test/sistemaAutogestion/IObligatorioTest1.java</file>
+            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/sistemaAutogestion/IObligatorio.java</file>
             <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/dominio/Evento.java</file>
-            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/tads/Cola.java</file>
+            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/tads/InterfacesTads/IListaDoble.java</file>
+            <file>file:/C:/Users/PCMYA/OneDrive/Desktop/ORT/Semestre%203/Algoritmos%20y%20Estructuras%20de%20Datos/OBL2/algoritmos-2/src/tads/ListaDoble.java</file>
         </group>
     </open-files>
 </project-private>
