@@ -20,7 +20,7 @@ public class Evento {
         this.aforoNecesario = aforoNecesario;
         this.fecha = fecha;
         this.salaAsignada = salaAsignada;
-        this.entradasVendidas = new ListaDoble<Entrada>(10);
+        this.entradasVendidas = new ListaDoble<Entrada>(aforoNecesario);
         this.listaEspera = new Cola<Cliente>();
     }
 

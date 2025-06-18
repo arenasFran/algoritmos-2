@@ -26,7 +26,7 @@ public class DeshacerUltimasComprasTestPersonalizado {
         sistema.registrarSala("SalaB", 50);
         sistema.registrarEvento("EV1", "Concierto Rock", 40, LocalDate.of(2025, 7, 10));
         sistema.registrarEvento("EV2", "Obra de Teatro", 30, LocalDate.of(2025, 7, 11));
-        sistema.registrarEvento("EV3", "Festival Jazz", 60, LocalDate.of(2025, 7, 12));
+        sistema.registrarEvento("EV3", "Festival Jazz", 50, LocalDate.of(2025, 7, 12));
 
         sistema.registrarCliente("11111111", "Alice");
         sistema.registrarCliente("22222222", "Bob");
@@ -116,7 +116,7 @@ public class DeshacerUltimasComprasTestPersonalizado {
     for (int i = 0; i < 50; i++) {
         String cedula = "111111" + String.format("%02d", i);
         // Puedes imprimir aquí para ver cada cliente que se intenta registrar/comprar
-        // System.out.println("Intentando registrar/comprar para: " + cedula);
+        System.out.println("Intentando registrar/comprar para: " + cedula);
         sistema.registrarCliente(cedula, "Cliente" + i);
         sistema.comprarEntrada(cedula, "EV3");
     }
@@ -131,14 +131,25 @@ public class DeshacerUltimasComprasTestPersonalizado {
     // Si ev3 es null, la siguiente línea fallará.
     // Añade una verificación explícita para saber si la lista de espera es null.
     if (ev3 != null) {
+        
+        
+        
         System.out.println("Lista de espera de EV3 es null? " + (ev3.getListaEspera() == null));
+        
+        System.out.println("Lista clientes en espera de EV3"+ ev3.getListaEspera().verPrimero().getName());
+        
+      ///ACA SE RROMPE 
         if (ev3.getListaEspera() != null) { // Solo llama a métodos si no es null
             assertFalse(ev3.getListaEspera().esVacia());
-            assertEquals("44444444", ev3.getListaEspera().verPrimero().getCedula());
+            assertEquals("44444444", ev3.getListaEspera().verPrimero().getCedula()) ;
         } else {
             System.out.println("ERROR: La lista de espera de EV3 es NULL."); // Mensaje de error personalizado
         }
+
     }
+    
+    
+    
     System.out.println("FLAG 2");
         // Cliente Charlie (33333333) compra para EV1 (last purchase on overall stack)
         sistema.comprarEntrada("33333333", "EV1"); // Most recent overall purchase

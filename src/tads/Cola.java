@@ -47,9 +47,9 @@ public class Cola<T> implements ICola<T> {
     }
 
     public T verPrimero() {
-        if (this.esVacia()) {
-            return null;
-        }
+   if (this.esVacia()) {
+        return null;
+    }
         return this.primero.getDato();
     }
 } 
