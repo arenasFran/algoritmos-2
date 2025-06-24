@@ -60,4 +60,7 @@ public class Entrada implements Comparable<Entrada> {
     public void setComentario(String comentario) {
         this.comentario = comentario;
     }
+     public boolean esDevolucion() {
+      return this.estado == estado.DEVUELTA;
+    }
 }

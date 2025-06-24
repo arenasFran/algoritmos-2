@@ -7,6 +7,7 @@ import dominio.Evento;
 import dominio.Sala;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import static sistemaAutogestion.Retorno.Resultado.NO_IMPLEMENTADA;
 import tads.InterfacesTads.IListaDoble;
 import tads.InterfacesTads.IListaSimple;
 import tads.ListaSimple;
@@ -30,6 +31,101 @@ public class Sistema implements IObligatorio {
         pilaEntradas = new Pila<Entrada>();
     }
 
+    
+   @Override
+    public Retorno eliminarCliente(String cedula) {
+    
+        if (!cedulaEsValida(cedula)) {
+            return new Retorno(Retorno.Resultado.ERROR_1);
+        }
+
+  
+        Cliente cliente = buscarClientePorCedula(cedula);
+        if (cliente == null) {
+            return new Retorno(Retorno.Resultado.ERROR_2);
+        }
+
+        
+        if (clienteTieneEntradas(cedula)) {
+            return new Retorno(Retorno.Resultado.ERROR_3);
+        }
+
+       
+        listaClientes.eliminar(cliente);
+        return new Retorno(Retorno.Resultado.OK);
+    }
+
+    private boolean clienteTieneEntradas(String cedula) {
+        for (int i = 0; i < listaEventos.tamaño(); i++) {
+            Evento evento = listaEventos.obtenerPorIndice(i);
+            IListaDoble<Entrada> entradas = evento.getEntradasVendidas();
+            for (int j = 0; j < entradas.cantElementos(); j++) {
+                Entrada entrada = entradas.obtenerPorIndice(j);
+                if (entrada.getCliente().getCedula().equals(cedula)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    @Override
+    public Retorno modificarCalificacion(String cedula, String codigoEvento, int nota) {
+        
+        if (!cedulaEsValida(cedula)) {
+            return new Retorno(Retorno.Resultado.ERROR_1);
+        }
+
+      
+        Cliente clienteBuscado = buscarClientePorCedula(cedula);
+        if (clienteBuscado == null) {
+            return new Retorno(Retorno.Resultado.ERROR_2);
+        }
+
+        
+        Evento eventoEncontrado = null;
+        for (int i = 0; i < listaEventos.tamaño(); i++) {
+            Evento evento = listaEventos.obtenerPorIndice(i);
+            if (evento.getCodigo().equals(codigoEvento)) {
+                eventoEncontrado = evento;
+                break;
+            }
+        }
+        if (eventoEncontrado == null) {
+            return new Retorno(Retorno.Resultado.ERROR_3);
+        }
+
+    
+        if (nota < 1 && nota > 10) {
+            return new Retorno(Retorno.Resultado.ERROR_4);
+        }
+
+      
+        IListaDoble<Entrada> entradas = eventoEncontrado.getEntradasVendidas();
+        Entrada entradaCliente = null;
+
+        for (int i = 0; i < entradas.cantElementos(); i++) {
+            Entrada entrada = entradas.obtenerPorIndice(i);
+            if (entrada.getCliente().getCedula().equals(cedula)) {
+                entradaCliente = entrada;
+                break;
+            }
+        }
+
+   
+        if (entradaCliente == null && entradaCliente.getCalificacion() == null) {
+            return new Retorno(Retorno.Resultado.ERROR_2);
+        }
+
+   
+        entradaCliente.setCalificacion(nota);
+        return new Retorno(Retorno.Resultado.OK);
+    }
+    
+    
+    
+    
+    
     /*
     Pre-condiciones: Ninguna.
     Post-condiciones:
@@ -508,7 +604,7 @@ public class Sistema implements IObligatorio {
     @Override
     public Retorno listarSalas() {
         if (listaSalas.tamaño() == 0) {
-            return new Retorno(Retorno.Resultado.OK, "No hay salas registradas.");
+            return new Retorno(Retorno.Resultado.OK, "");
         }
 
         ListaSimple<Sala> salasOrdenadas = copiarSalas();
@@ -617,7 +713,7 @@ public class Sistema implements IObligatorio {
     @Override
     public Retorno listarClientes() {
         if (listaClientes.getInicio() == null) {
-            return new Retorno(Retorno.Resultado.OK, "No hay clientes registrados.");
+            return new Retorno(Retorno.Resultado.OK, "");
         }
 
         ListaSimple<Cliente> ordenada = obtenerClientesOrdenadosPorCedula();
@@ -738,37 +834,43 @@ public class Sistema implements IObligatorio {
     Si hay entradas vendidas, retorna Retorno.OK con una cadena que lista los últimos n clientes que compraron entradas para el evento. El formato es "cedula-nombre" y los clientes están separados por "#". Si el número total de entradas vendidas es menor que n, se listan todos los clientes. Los clientes se listan en el orden en que se agregaron a la lista de entradas vendidas del evento (es decir, los más recientes primero, hasta n).
      */
     @Override
-    public Retorno listarClientesDeEvento(String codigo, int n) {
-        if (n < 1) {
-            return Retorno.error2();
-        }
-
-        Evento evento = buscarEvento(codigo);
-        if (evento == null) {
-            return Retorno.error1();
-        }
-
-        ListaDoble<Entrada> entradas = evento.getEntradasVendidas();
-        if (entradas.cantElementos() == 0) {
-            return new Retorno(Retorno.Resultado.OK, "");
-        }
-
-        StringBuilder resultado = new StringBuilder();
-        int desde = Math.max(0, entradas.cantElementos() - n);
-
-        for (int i = desde; i < entradas.cantElementos(); i++) {
-            Entrada entrada = entradas.obtenerPorIndice(i);
-            Cliente cliente = entrada.getCliente();
-            if (resultado.length() > 0) {
-                resultado.append("#");
-            }
-            resultado.append(cliente.getCedula()).append("-")
-                    .append(cliente.getName());
-        }
-
-        return new Retorno(Retorno.Resultado.OK, resultado.toString());
+public Retorno listarClientesDeEvento(String codigo, int n) {
+    // 1. Validate 'n' parameter
+    if (n < 1) {
+        return Retorno.error2(); // Invalid parameter
     }
 
+    // 2. Search for the event
+    Evento evento = buscarEvento(codigo);
+    if (evento == null) {
+        return Retorno.error1(); // Event not found
+    }
+
+    // 3. Get the sold entries for the event
+    ListaDoble<Entrada> entradas = evento.getEntradasVendidas();
+    if (entradas.cantElementos() == 0) {
+        return new Retorno(Retorno.Resultado.OK, ""); // No entries found, return empty string
+    }
+
+    // 4. Build the result string in reverse order to match expected output
+    StringBuilder resultado = new StringBuilder();
+    // Start from the last element and go backwards, up to 'n' elements
+    for (int i = entradas.cantElementos() - 1; i >= 0 && n > 0; i--, n--) {
+        Entrada entrada = entradas.obtenerPorIndice(i);
+        Cliente cliente = entrada.getCliente();
+
+        // Add separator if it's not the first element being appended
+        if (resultado.length() > 0) {
+            resultado.append("#");
+        }
+        
+        // Append client's cédula and name
+        resultado.append(cliente.getCedula()).append("-")
+                 .append(cliente.getName());
+    }
+
+    return new Retorno(Retorno.Resultado.OK, resultado.toString());
+}
     @Override
     /*
     Pre-condiciones:Ninguna.
@@ -849,7 +951,7 @@ public class Sistema implements IObligatorio {
         }
 
         if (pilaEntradas.esVacia()) {
-            return Retorno.ok("No hay entradas vendidas para deshacer.");
+            return Retorno.ok("");
         }
 
         ListaSimple<Entrada> entradasADeshacer = new ListaSimple<>();
@@ -1000,60 +1102,54 @@ public class Sistema implements IObligatorio {
     Si el cliente existe pero no tiene compras de entradas, retorna Retorno.ok("").
     Si el cliente tiene compras, retorna Retorno.ok() con una cadena que lista todas las compras del cliente. Las compras se ordenan cronológicamente por la fecha del evento (más antigua primero). El formato de cada compra en la cadena es "codigoEvento-descripcionEvento-fechaEvento (dd/MM/yyyy)", y las compras están separadas por "#".
      */
-    @Override
-    public Retorno comprasDeCliente(String cedula) {
-
-        Cliente cliente = buscarClientePorCedula(cedula);
-        if (cliente == null) {
-            return Retorno.error1();
-        }
-
-        ListaSimple<Entrada> entradasCliente = new ListaSimple<>();
-        for (int i = 0; i < listaEventos.tamaño(); i++) {
-            Evento evento = listaEventos.obtenerPorIndice(i);
-            IListaDoble<Entrada> entradas = evento.getEntradasVendidas();
-            for (int j = 0; j < entradas.cantElementos(); j++) {
-                Entrada e = entradas.obtenerPorIndice(j);
-                if (e.getCliente().getCedula().equals(cedula)) {
-                    entradasCliente.agregar(e);
-                }
-            }
-        }
-
-        entradasCliente.bubbleSort((e1, e2)
-                -> e1.getEvento().getFecha().compareTo(e2.getEvento().getFecha())
-        );
-
-        StringBuilder sb = new StringBuilder();
-
-        if (entradasCliente.tamaño() > 0) {
-            Entrada e0 = entradasCliente.obtenerPorIndice(0);
-            Evento ev0 = e0.getEvento();
-
-            sb.append(ev0.getCodigo());
-            sb.append("-");
-
-            sb.append(ev0.getDescripcion())
-                    .append("-")
-                    .append(ev0.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-
-            for (int i = 1; i < entradasCliente.tamaño(); i++) {
-                Entrada e = entradasCliente.obtenerPorIndice(i);
-                Evento ev = e.getEvento();
-                sb.append("#")
-                        .append(ev.getCodigo())
-                        .append("-")
-                        .append(ev.getDescripcion())
-                        .append("-")
-                        .append(ev.getFecha().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-            }
-            ;
-        } else {
-            return Retorno.ok("");
-        }
-        return Retorno.ok(sb.toString());
+ @Override
+public Retorno comprasDeCliente(String cedula) {
+    // 1. Validate if the client exists
+    Cliente cliente = buscarClientePorCedula(cedula);
+    if (cliente == null) {
+        return Retorno.error1(); // Client not found
     }
 
+    // 2. Collect all entries for the client
+    ListaSimple<Entrada> entradasCliente = new ListaSimple<>();
+    for (int i = 0; i < listaEventos.tamaño(); i++) {
+        Evento evento = listaEventos.obtenerPorIndice(i);
+        // Assuming getEntradasVendidas() returns an iterable list of Entrada objects
+        IListaDoble<Entrada> entradas = evento.getEntradasVendidas();
+        for (int j = 0; j < entradas.cantElementos(); j++) {
+            Entrada e = entradas.obtenerPorIndice(j);
+            // Check if the entry belongs to the given client
+            if (e.getCliente() != null && e.getCliente().getCedula().equals(cedula)) {
+                entradasCliente.agregar(e);
+            }
+        }
+    }
+
+    // 3. Handle cases where no entries are found for the client
+    if (entradasCliente.tamaño() == 0) {
+        return Retorno.ok(""); // No purchases found, return an empty string
+    }
+
+    // 4. Build the result string
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < entradasCliente.tamaño(); i++) {
+        Entrada entrada = entradasCliente.obtenerPorIndice(i);
+        Evento evento = entrada.getEvento();
+
+        // Determine the state of the entry (Devuelta 'D' or Normal 'N')
+        String estado = (entrada.getEstado() == Estado.DEVUELTA) ? "D" : "N";
+
+        // Append the event code and its state
+        sb.append(evento.getCodigo()).append("-").append(estado);
+
+        // Add '#' separator if there are more entries to follow
+        if (i < entradasCliente.tamaño() - 1) {
+            sb.append("#");
+        }
+    }
+
+    return Retorno.ok(sb.toString());
+}
     /*
     Pre-condiciones:
     mes debe ser un valor entre 1 y 12 (ambos inclusive).
@@ -1066,75 +1162,91 @@ public class Sistema implements IObligatorio {
     Retorna Retorno.ok() con una cadena que lista la cantidad de entradas vendidas por día para el mes dado. El formato es "dd/MM/yyyy-cantidadEntradas", y los pares están separados por "#". La cantidad de entradas se incrementa en 1, según la implementación del código.
      */
     @Override
-    public Retorno comprasXDia(int mes) {
-
-        if (mes < 1 || mes > 12) {
-            return Retorno.error1();
-        }
-
-        ListaSimple<String> fechas = new ListaSimple<>();
-        ListaSimple<Integer> cantidades = new ListaSimple<>();
-
-        for (int i = 0; i < listaEventos.tamaño(); i++) {
-            Evento evento = listaEventos.obtenerPorIndice(i);
-            LocalDate fechaEvento = evento.getFecha();
-
-            if (fechaEvento.getMonthValue() == mes) {
-                String fechaStr = fechaEvento.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                int entradasVendidas = evento.getEntradasVendidas().cantElementos();
-
-                boolean encontrada = false;
-                for (int j = 0; j < fechas.tamaño(); j++) {
-                    if (fechas.obtenerPorIndice(j).equals(fechaStr)) {
-
-                        int cantidadActual = cantidades.obtenerPorIndice(j);
-                        cantidades.modificarElemento(j, cantidadActual + entradasVendidas);
-                        encontrada = true;
-                        break;
-                    }
-                }
-
-                if (!encontrada) {
-                    fechas.agregar(fechaStr);
-                    cantidades.agregar(entradasVendidas);
-                }
-            }
-        }
-
-        ordenarFechasYCantidades(fechas, cantidades);
-
-        StringBuilder resultado = new StringBuilder();
-        for (int i = 0; i < fechas.tamaño(); i++) {
-            if (i > 0) {
-                resultado.append("#");
-            }
-            resultado.append(fechas.obtenerPorIndice(i))
-                    .append("-")
-                    .append(cantidades.obtenerPorIndice(i) + 1);
-        }
-
-        return Retorno.ok(resultado.toString());
+public Retorno comprasXDia(int mes) {
+    
+    if (mes < 1 || mes > 12) {
+        return Retorno.error1(); 
     }
 
-    private void ordenarFechasYCantidades(ListaSimple<String> fechas, ListaSimple<Integer> cantidades) {
-        for (int i = 0; i < fechas.tamaño() - 1; i++) {
-            for (int j = 0; j < fechas.tamaño() - i - 1; j++) {
-                String fechaActual = fechas.obtenerPorIndice(j);
-                String fechaSiguiente = fechas.obtenerPorIndice(j + 1);
+  
+    ListaSimple<Integer> dias = new ListaSimple<>();
+    ListaSimple<Integer> cantidades = new ListaSimple<>();
 
-                if (fechaActual.compareTo(fechaSiguiente) > 0) {
+ 
+    for (int i = 0; i < listaEventos.tamaño(); i++) {
+        Evento evento = listaEventos.obtenerPorIndice(i);
+        LocalDate fechaEvento = evento.getFecha();
 
-                    String tempFecha = fechaActual;
-                    fechas.modificarElemento(j, fechaSiguiente);
-                    fechas.modificarElemento(j + 1, tempFecha);
+        
+        if (fechaEvento.getMonthValue() == mes) {
+            int dayOfMonth = fechaEvento.getDayOfMonth(); 
+            int entradasVendidas = evento.getEntradasVendidas().cantElementos();
 
-                    int tempCant = cantidades.obtenerPorIndice(j);
-                    cantidades.modificarElemento(j, cantidades.obtenerPorIndice(j + 1));
-                    cantidades.modificarElemento(j + 1, tempCant);
+            boolean foundDay = false;
+       
+            for (int j = 0; j < dias.tamaño(); j++) {
+                if (dias.obtenerPorIndice(j).equals(dayOfMonth)) {
+                  
+                    int currentQuantity = cantidades.obtenerPorIndice(j);
+                    cantidades.modificarElemento(j, currentQuantity + entradasVendidas);
+                    foundDay = true;
+                    break; 
                 }
+            }
+
+           
+            if (!foundDay) {
+                dias.agregar(dayOfMonth);
+                cantidades.agregar(entradasVendidas);
             }
         }
     }
+
+    
+    if (dias.tamaño() == 0) { 
+        return Retorno.ok("");
+    }
+
+  
+    ordenarDiasYCantidades(dias, cantidades);
+
+  
+    StringBuilder resultado = new StringBuilder();
+    for (int i = 0; i < dias.tamaño(); i++) {
+        if (i > 0) {
+            resultado.append("#"); 
+        }
+ 
+        resultado.append(dias.obtenerPorIndice(i))
+                 .append("-")
+                 .append(cantidades.obtenerPorIndice(i)); 
+    }
+
+    return Retorno.ok(resultado.toString());
+}
+
+private void ordenarDiasYCantidades(ListaSimple<Integer> dias, ListaSimple<Integer> cantidades) {
+    for (int i = 0; i < dias.tamaño() - 1; i++) {
+        for (int j = 0; j < dias.tamaño() - i - 1; j++) {
+            int diaActual = dias.obtenerPorIndice(j);
+            int diaSiguiente = dias.obtenerPorIndice(j + 1);
+
+  
+            if (diaActual > diaSiguiente) {
+      
+                int tempDia = diaActual;
+                dias.modificarElemento(j, diaSiguiente);
+                dias.modificarElemento(j + 1, tempDia);
+
+          
+                int tempCant = cantidades.obtenerPorIndice(j);
+                cantidades.modificarElemento(j, cantidades.obtenerPorIndice(j + 1));
+                cantidades.modificarElemento(j + 1, tempCant);
+            }
+        }
+    }
+}
+
 
     public Evento buscarEvento(String codigo) {
         for (int i = 0; i < listaEventos.tamaño(); i++) {

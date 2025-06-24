@@ -48,5 +48,6 @@ public interface IObligatorio {
     public Retorno comprasDeCliente(String cedula);
 
     public Retorno comprasXDia(int mes);
-
+    public Retorno eliminarCliente(String cedula);
+    public Retorno modificarCalificacion(String cedula, String codigoEvento, int nuevaCalificacion);
 }

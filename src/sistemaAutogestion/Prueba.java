@@ -1,6 +1,8 @@
-package SistemaAutogestion;
+package sistemaAutogestion;
 
+//import tarea0.Retorno.Resultado;
 import sistemaAutogestion.Retorno;
+import sistemaAutogestion.Retorno.Resultado;
 import sistemaAutogestion.Retorno.Resultado;
 import static sistemaAutogestion.Retorno.Resultado.NO_IMPLEMENTADA;
 
@@ -12,8 +14,6 @@ public class Prueba {
         cantCorrectas = cantIncorrectas = cantNoImplementadas = 0;
     }
 
-   
-  
     public void ver(Retorno.Resultado tr, Retorno.Resultado RetornoEsperado, String comentario) {
         System.out.println("----------------------------- Testeo --------------------------------");
         imprimirComentario(comentario);
@@ -34,7 +34,7 @@ public class Prueba {
         }
     }
 
-    public void imprimirComentario(String comentario) {
+    void imprimirComentario(String comentario) {
         if (comentario != null || !comentario.isEmpty()) {
             System.out.println("\n  Comentario: " + comentario);
         }
@@ -52,15 +52,25 @@ public class Prueba {
 
     public String getStringRetorno(Resultado Resultado) {
         switch (Resultado) {
-        case OK: return "OK";
-        case ERROR_1: return "ERROR_1";
-        case ERROR_2: return "ERROR_2";
-        case ERROR_3: return "ERROR_3";
-        case ERROR_4: return "ERROR_4";
-        case ERROR_5: return "ERROR_5";
-        case NO_IMPLEMENTADA: return "NO_IMPLEMENTADA";
-        default: return "NO_IMPLEMENTADA";
-    }
+            case OK:
+                return "OK";
+            case ERROR_1:
+                return "ERROR_1";
+            case ERROR_2:
+                return "ERROR_2";
+            case ERROR_3:
+                return "ERROR_3";
+            case ERROR_4:
+                return "ERROR_4";
+            case ERROR_5:
+                return "ERROR_5";                
+           case IMPLEMENTADA:
+                return "IMPLEMENTADA";
+            case NO_IMPLEMENTADA:
+                return "NO_IMPLEMENTADA";
+            default:
+                return "NO_IMPLEMENTADA";
+        }
     }
 
     public void imprimirResultadosPrueba() {
@@ -74,14 +84,14 @@ public class Prueba {
         System.out.println();
     }
 
-    public static void tituloPrueba(String s) {
+    public void tituloPrueba(String s) {
         System.out.println("");
         System.out.println("********************************************************************************************************");
         System.out.println("  " + s);
         System.out.println("********************************************************************************************************");
     }
 
-    public static void finPrueba(String s) {
+    public void finPrueba(String s) {
         System.out.println("**************************************** " + s + " ***************************************");
         System.out.println("********************************************************************************************************");
         System.out.println();
