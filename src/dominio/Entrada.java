@@ -63,4 +63,13 @@ public class Entrada implements Comparable<Entrada> {
      public boolean esDevolucion() {
       return this.estado == estado.DEVUELTA;
     }
+
+    @Override
+    public String toString() {
+        return "Entrada[evento=" + (evento != null ? evento.getCodigo() : "null") +
+               ", cliente=" + (cliente != null ? cliente.getName() : "null") +
+               ", cedula=" + (cliente != null ? cliente.getCedula() : "null") +
+               ", estado=" + estado +
+               "]";
+    }
 }
