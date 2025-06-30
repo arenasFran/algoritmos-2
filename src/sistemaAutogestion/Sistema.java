@@ -492,12 +492,7 @@ public class Sistema implements IObligatorio {
      */
     @Override
     public Retorno devolverEntrada(String cedula, String codigoEvento) {
-
-        Cliente clienteBuscado = buscarClientePorCedula(cedula);
-        if (clienteBuscado == null) {
-            return Retorno.error1();
-        }
-
+       
         Evento eventoEncontrado = null;
         for (int i = 0; i < listaEventos.tamaño(); i++) {
             Evento evento = listaEventos.obtenerPorIndice(i);
@@ -506,10 +501,18 @@ public class Sistema implements IObligatorio {
                 break;
             }
         }
+        
         if (eventoEncontrado == null) {
             return Retorno.error2();
         }
 
+     
+        Cliente clienteBuscado = buscarClientePorCedula(cedula);
+        if (clienteBuscado == null) {
+            return Retorno.error1();
+        }
+
+      
         boolean entradaEliminada = false;
         IListaDoble<Entrada> entradas = eventoEncontrado.getEntradasVendidas();
         for (int i = 0; i < entradas.cantElementos(); i++) {
@@ -521,8 +524,9 @@ public class Sistema implements IObligatorio {
             }
         }
 
+      
         if (!entradaEliminada) {
-            return Retorno.error1();
+            return Retorno.ok();
         }
 
         if (!eventoEncontrado.getListaEspera().esVacia()) {
